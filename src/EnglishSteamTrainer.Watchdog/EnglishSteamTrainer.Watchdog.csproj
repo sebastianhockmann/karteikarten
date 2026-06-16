@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EnglishSteamTrainer.Core\EnglishSteamTrainer.Core.csproj" />
+  </ItemGroup>
+
+  <Target Name="CopyToUiOutput" AfterTargets="Build">
+    <Copy
+      SourceFiles="$(TargetDir)EnglishSteamTrainer.Watchdog.exe"
+      DestinationFolder="..\EnglishSteamTrainer.UI\bin\$(Configuration)\net8.0-windows\" />
+  </Target>
+
+</Project>

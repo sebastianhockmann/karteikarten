@@ -1,0 +1,121 @@
+﻿<Window x:Class="EnglishSteamTrainer.UI.TrophyWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="🏆 Geschafft!"
+        Height="650"
+        Width="700"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="#FFF8E1">
+
+    <Grid Margin="20">
+
+        <Border Background="White"
+                CornerRadius="25"
+                Padding="30">
+
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+
+                <!-- Pokal -->
+                <TextBlock Text="🏆"
+                           FontSize="110"
+                           HorizontalAlignment="Center">
+
+                    <TextBlock.RenderTransform>
+                        <ScaleTransform x:Name="TrophyScale"
+                                        ScaleX="1"
+                                        ScaleY="1"/>
+                    </TextBlock.RenderTransform>
+
+                </TextBlock>
+
+                <!-- Überschrift -->
+                <TextBlock Text="Pokal gewonnen!"
+                           FontSize="38"
+                           FontWeight="Bold"
+                           Foreground="#F57F17"
+                           HorizontalAlignment="Center"
+                           Margin="0,15,0,0"/>
+
+                <!-- Erklärung -->
+                <TextBlock Text="Du hast 15 richtige Antworten geschafft."
+                           FontSize="24"
+                           HorizontalAlignment="Center"
+                           Margin="0,20,0,0"/>
+
+                <TextBlock Text="Steam ist jetzt freigeschaltet 🚀"
+                           FontSize="28"
+                           FontWeight="Bold"
+                           Foreground="#2E7D32"
+                           HorizontalAlignment="Center"
+                           Margin="0,15,0,40"/>
+
+                <!-- Button -->
+                <Button Width="360"
+                        Height="85"
+                        Background="#4CAF50"
+                        Foreground="White"
+                        BorderBrush="#388E3C"
+                        BorderThickness="2"
+                        HorizontalAlignment="Center"
+                        Cursor="Hand"
+                        FontSize="24"
+                        FontWeight="Bold"
+                        Click="Close_Click">
+
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Center">
+
+                        <TextBlock Text="🎮"
+                                   FontSize="26"
+                                   Margin="0,0,12,0"
+                                   VerticalAlignment="Center"/>
+
+                        <TextBlock Text="Jetzt Steam starten!"
+                                   FontSize="24"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Center"/>
+
+                    </StackPanel>
+
+                </Button>
+
+            </StackPanel>
+
+        </Border>
+
+    </Grid>
+
+    <Window.Triggers>
+
+        <EventTrigger RoutedEvent="Window.Loaded">
+
+            <BeginStoryboard>
+
+                <Storyboard RepeatBehavior="5x"
+                            AutoReverse="True">
+
+                    <DoubleAnimation
+                        Storyboard.TargetName="TrophyScale"
+                        Storyboard.TargetProperty="ScaleX"
+                        From="1"
+                        To="1.25"
+                        Duration="0:0:0.35"/>
+
+                    <DoubleAnimation
+                        Storyboard.TargetName="TrophyScale"
+                        Storyboard.TargetProperty="ScaleY"
+                        From="1"
+                        To="1.25"
+                        Duration="0:0:0.35"/>
+
+                </Storyboard>
+
+            </BeginStoryboard>
+
+        </EventTrigger>
+
+    </Window.Triggers>
+
+</Window>
