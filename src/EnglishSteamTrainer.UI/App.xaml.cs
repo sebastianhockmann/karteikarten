@@ -33,16 +33,22 @@ public partial class App : Application
         window.Show();
     }
 
-    // Die Sprache legt die Installation fest (settings.json, nur für Admins änderbar).
-    // "--language es" gilt nur für Konten, die dort nicht eingetragen sind, z. B. zum Testen.
-    private static LearningLanguage GetLanguage(string[] args)
+    // Sprache: zentral aus content/config.json, sonst aus der Installation (settings.json) -
+    // beides kann das Kind nicht ändern. "--language es" gilt nur für Konten, die nirgends
+    // eingetragen sind, z. B. zum Testen.
+    private static AssignedLanguage GetLanguage(string[] args)
     {
         try
         {
-            var profile = InstallSettings.Load().FindUser(DailyUnlock.CurrentUser);
+            var assigned = LanguageAssignment.Resolve(
+                ContentStore.LoadConfig().Value,
+                InstallSettings.Load(),
+                DailyUnlock.CurrentUser,
+                Environment.MachineName,
+                Environment.UserName);
 
-            if (profile is not null)
-                return profile.LearningLanguage;
+            if (assigned is not null)
+                return assigned;
         }
         catch
         {
@@ -50,10 +56,9 @@ public partial class App : Application
         }
 
         var index = Array.FindIndex(args, arg => arg is "--language" or "-language");
+        var language = index >= 0 && index + 1 < args.Length ? Languages.Find(args[index + 1]) : null;
 
-        return index >= 0 && index + 1 < args.Length
-            ? Languages.Find(args[index + 1]) ?? Languages.English
-            : Languages.English;
+        return new AssignedLanguage(language ?? Languages.English, LanguageSource.Default);
     }
 
     protected override void OnExit(ExitEventArgs e)

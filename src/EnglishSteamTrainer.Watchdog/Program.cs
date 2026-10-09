@@ -36,7 +36,7 @@ var logFolder = Path.Combine(DailyUnlock.SharedFolder, "logs");
 var logFile = Path.Combine(logFolder, $"watchdog-{Environment.UserName}.log");
 var logLock = new object();
 
-var blockedUsers = new List<SecurityIdentifier>();
+var blockedUsers = new List<(SecurityIdentifier Sid, string Account)>();
 var blockedUsersDescription = "";
 var settingsFileTime = DateTime.MinValue;
 var usersLoadedAt = DateTime.MinValue;
@@ -68,8 +68,12 @@ while (true)
             }
         }
 
+        // Anzahl pro Konto (content/config.json -> users), sonst der allgemeine Wert.
         var lockedUsers = GetBlockedUsers()
-            .Where(user => !DailyUnlock.IsUnlockedToday(user, config.Value.RequiredCorrectAnswers))
+            .Where(user => !DailyUnlock.IsUnlockedToday(
+                user.Sid,
+                config.Value.RequiredCorrectAnswersFor(Environment.MachineName, user.Account)))
+            .Select(user => user.Sid)
             .ToList();
 
         var killed = AppBlocker.KillBlockedProcesses(lockedUsers, config.Value.BlockedApps);
@@ -119,10 +123,10 @@ async Task SyncContentLoop()
     }
 }
 
-List<SecurityIdentifier> GetBlockedUsers()
+List<(SecurityIdentifier Sid, string Account)> GetBlockedUsers()
 {
     if (!runsAsSystem)
-        return [currentUser];
+        return [(currentUser, Environment.UserName)];
 
     var fileTime = File.Exists(InstallSettings.FilePath)
         ? File.GetLastWriteTimeUtc(InstallSettings.FilePath)
@@ -135,7 +139,7 @@ List<SecurityIdentifier> GetBlockedUsers()
     // Erst komplett einlesen, dann übernehmen: schlägt das Lesen fehl, bleibt die
     // bisherige Liste aktiv und es wird im nächsten Durchlauf erneut versucht.
     var settings = InstallSettings.Load();
-    var users = new List<SecurityIdentifier>();
+    var users = new List<(SecurityIdentifier Sid, string Account)>();
     var names = new List<string>();
 
     foreach (var profile in settings.Users)
@@ -148,8 +152,12 @@ List<SecurityIdentifier> GetBlockedUsers()
             continue;
         }
 
-        users.Add(sid);
-        names.Add($"{profile.Account} ({profile.LearningLanguage.Name})");
+        users.Add((sid, profile.Account));
+        var central = config.Value.FindLanguage(Environment.MachineName, profile.Account);
+        var required = config.Value.RequiredCorrectAnswersFor(Environment.MachineName, profile.Account);
+        names.Add(central is null
+            ? $"{profile.Account} ({profile.LearningLanguage.Name} lokal, {required} Antworten)"
+            : $"{profile.Account} ({central.Name} zentral, {required} Antworten)");
     }
 
     var description = names.Count == 0

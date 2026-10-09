@@ -16,7 +16,7 @@ public partial class HistoryWindow : Window
         var xp = journal.TotalXp;
         var level = XpRules.Level(xp);
         var days = journal.GetDaySummaries();
-        var required = config.RequiredCorrectAnswers;
+        var required = config.RequiredCorrectAnswersFor(System.Environment.MachineName, System.Environment.UserName);
 
         TotalXpText.Text = xp.ToString();
         LevelValueText.Text = level.ToString();

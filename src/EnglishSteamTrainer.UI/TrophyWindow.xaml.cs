@@ -5,14 +5,14 @@ namespace EnglishSteamTrainer.UI;
 
 public partial class TrophyWindow : Window
 {
-    private readonly TrainerConfig _config;
+    private readonly int _required;
 
     public TrophyWindow(TrainerConfig config)
     {
         InitializeComponent();
 
-        _config = config;
-        GoalText.Text = $"Du hast {config.RequiredCorrectAnswers} richtige Antworten geschafft.";
+        _required = config.RequiredCorrectAnswersFor(System.Environment.MachineName, System.Environment.UserName);
+        GoalText.Text = $"Du hast {_required} richtige Antworten geschafft.";
         UnlockedText.Text = $"{config.BlockedAppsText} sind jetzt freigeschaltet! 🚀";
         AppsList.ItemsSource = BlockedAppView.From(config.BlockedApps);
 
@@ -21,7 +21,7 @@ public partial class TrophyWindow : Window
 
     private void Close_Click(object sender, RoutedEventArgs e)
     {
-        AppBlocker.StartSteam(_config.RequiredCorrectAnswers);
+        AppBlocker.StartSteam(_required);
 
         Application.Current.Shutdown();
     }

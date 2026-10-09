@@ -17,6 +17,7 @@ public partial class MainWindow : Window
     private static readonly TimeSpan AdvanceDelay = TimeSpan.FromMilliseconds(900);
 
     private readonly LearningLanguage _language;
+    private readonly AssignedLanguage _assignedLanguage;
     private readonly AnswerJournal _journal;
     private readonly LoadedContent<TrainerConfig> _config;
     private readonly LoadedContent<List<VocabularyCard>> _vocabCards;
@@ -31,16 +32,17 @@ public partial class MainWindow : Window
     private DateOnly _correctTodayDate;
     private int _correctToday;
 
-    public MainWindow(LearningLanguage language, AnswerJournal journal)
+    public MainWindow(AssignedLanguage assignedLanguage, AnswerJournal journal)
     {
         InitializeComponent();
         StartWatchdog();
 
-        _language = language;
+        _assignedLanguage = assignedLanguage;
+        _language = assignedLanguage.Language;
         _journal = journal;
         _config = ContentStore.LoadConfig();
-        _vocabCards = ContentStore.LoadVocabulary(language);
-        _tenseQuestions = ContentStore.LoadGrammar(language);
+        _vocabCards = ContentStore.LoadVocabulary(_language);
+        _tenseQuestions = ContentStore.LoadGrammar(_language);
 
         _advanceTimer = new DispatcherTimer { Interval = AdvanceDelay };
         _advanceTimer.Tick += (_, _) =>
@@ -69,7 +71,8 @@ public partial class MainWindow : Window
         }
     }
 
-    private int RequiredCorrectAnswers => _config.Value.RequiredCorrectAnswers;
+    private int RequiredCorrectAnswers =>
+        _config.Value.RequiredCorrectAnswersFor(Environment.MachineName, Environment.UserName);
     private string BlockedAppsText => _config.Value.BlockedAppsText;
 
     private void ApplyLanguageAndConfig()
@@ -94,7 +97,7 @@ public partial class MainWindow : Window
         };
 
         VersionText.Text =
-            $"Version {AppVersion.Current} · {_language.Name} · {_vocabCards.Value.Count} Vokabeln, " +
+            $"Version {AppVersion.Current} · {Environment.MachineName}\\{Environment.UserName}: {_language.Name} ({_assignedLanguage.SourceText}) · {_vocabCards.Value.Count} Vokabeln, " +
             $"{_tenseQuestions.Value.Count} Grammatik-Fragen · Inhalte: {contentText}";
     }
 

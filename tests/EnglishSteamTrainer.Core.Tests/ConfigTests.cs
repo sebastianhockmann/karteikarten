@@ -42,6 +42,79 @@ public class ConfigTests
         Assert.Equal(Languages.Spanish, settings.Users[1].LearningLanguage);
     }
 
+    private const string UsersConfig = """
+        {
+          "blockedApps": [ { "name": "Steam", "executables": [ "steam.exe" ] } ],
+          "users": [
+            { "computer": "*", "account": "lena", "language": "en" },
+            { "computer": "LAPTOP-LENA", "account": "Lena", "language": "es" },
+            { "account": "tiago", "language": "en" }
+          ]
+        }
+        """;
+
+    [Theory]
+    [InlineData("laptop-lena", "lena", "es")]
+    [InlineData("PC-WOHNZIMMER", "lena", "en")]
+    [InlineData("PC-WOHNZIMMER", "TIAGO", "en")]
+    [InlineData("PC-WOHNZIMMER", "papa", null)]
+    public void Central_language_prefers_exact_computer_over_wildcard(string computer, string account, string? expected)
+    {
+        var config = TrainerConfig.TryParse(UsersConfig)!;
+
+        Assert.Equal(expected, config.FindLanguage(computer, account)?.Code);
+    }
+
+    [Fact]
+    public void Required_answers_per_user_fall_back_to_general_value()
+    {
+        var config = TrainerConfig.TryParse("""
+            {
+              "requiredCorrectAnswers": 15,
+              "blockedApps": [ { "name": "Steam", "executables": [ "steam.exe" ] } ],
+              "users": [
+                { "computer": "*", "account": "leand", "language": "es", "requiredCorrectAnswers": 30 },
+                { "computer": "PC-OMA", "account": "leand", "requiredCorrectAnswers": 10 },
+                { "account": "tiago", "language": "en" }
+              ]
+            }
+            """)!;
+
+        Assert.Equal(30, config.RequiredCorrectAnswersFor("PC-ZUHAUSE", "Leand"));
+        Assert.Equal(10, config.RequiredCorrectAnswersFor("PC-OMA", "leand"));
+        Assert.Equal("es", config.FindLanguage("PC-OMA", "leand")?.Code);
+        Assert.Equal(15, config.RequiredCorrectAnswersFor("PC-ZUHAUSE", "tiago"));
+        Assert.Equal(15, config.RequiredCorrectAnswersFor("PC-ZUHAUSE", "papa"));
+    }
+
+    [Theory]
+    [InlineData("""{ "account": "lena", "language": "spanish" }""")]
+    [InlineData("""{ "account": "", "language": "es" }""")]
+    [InlineData("""{ "account": "lena", "requiredCorrectAnswers": 0 }""")]
+    public void Typo_in_user_assignment_rejects_config(string user)
+    {
+        var json = """{ "blockedApps": [ { "name": "Steam", "executables": [ "steam.exe" ] } ], "users": [ USER ] }"""
+            .Replace("USER", user);
+
+        Assert.Null(TrainerConfig.TryParse(json));
+    }
+
+    [Fact]
+    public void Central_assignment_wins_over_local_installation()
+    {
+        var sid = System.Security.Principal.WindowsIdentity.GetCurrent().User!;
+        var config = TrainerConfig.TryParse(UsersConfig)!;
+        var settings = InstallSettings.Parse($$"""{ "users": [ { "account": "{{Environment.UserName}}", "language": "en" } ] }""");
+
+        var local = LanguageAssignment.Resolve(config, settings, sid, "ANY-PC", Environment.UserName);
+        Assert.Equal(LanguageSource.Local, local?.Source);
+
+        config.Users.Add(new UserSettings("ANY-PC", Environment.UserName, "es"));
+        var central = LanguageAssignment.Resolve(config, settings, sid, "ANY-PC", Environment.UserName);
+        Assert.Equal(LanguageSource.Central, central?.Source);
+        Assert.Equal(Languages.Spanish, central?.Language);
+    }
+
     [Fact]
     public void Grammar_lines_need_exactly_three_distractors()
     {

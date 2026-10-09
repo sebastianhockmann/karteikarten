@@ -11,7 +11,8 @@ Kind-Konto freigeschaltet. Lernsprache pro Konto: **Englisch** oder **Spanisch**
 | Programmversion | dieses Repo, Git-Tag `v1.2.3` | GitHub-Release → Aufgabe `EnglishSteamTrainer-Update` (beim Hochfahren + alle 6 h) |
 | Vokabeln, Grammatik | `content/<sprache>/*.csv` im Repo | Watchdog lädt alle 30 Min. von GitHub in einen Cache |
 | Gesperrte Programme, Anzahl Aufgaben | `content/config.json` im Repo | wie Vokabeln |
-| Konto → Sprache | `settings.json` auf dem PC | `scripts\Install.ps1` |
+| Konto → Sprache (zentral, hat Vorrang) | `content/config.json` → `users` | wie Vokabeln |
+| Welche Konten gesperrt sind, Sprache als Rückfall | `settings.json` auf dem PC | `scripts\Install.ps1` |
 | Lernverlauf, Punkte | signiertes Lernjournal pro Konto auf dem PC | – |
 
 Alles unter `C:\ProgramData\EnglishSteamTrainer` ist **nur für Admins und
@@ -41,7 +42,8 @@ Updater ein. Ohne Rückfragen:
 
 - **Weiteres Konto auf demselben PC:** einfach erneut ausführen (jedes Konto
   mit eigener Sprache).
-- **Sprache ändern:** erneut ausführen, andere Sprache wählen.
+- **Sprache ändern:** am einfachsten zentral in `content/config.json` (siehe
+  „Sprache und Aufgabenzahl pro Kind“), alternativ `Install.ps1` erneut ausführen.
 - **Entfernen:** `Install.ps1 -TargetUser lena -Uninstall` (mit `-RemoveFiles`
   zusätzlich Programmordner und Lernverlauf löschen).
 - Bestehende Installationen der Vorgängerversion (`blocked-users.txt`,
@@ -51,11 +53,72 @@ Updater ein. Ohne Rückfragen:
 Das Kind muss ein **Standardkonto** (kein Admin) haben – sonst kann es den
 Watchdog beenden.
 
-## Vokabeln und Grammatik pflegen
+## Inhalte pflegen (vom Entwickler-PC oder auf GitHub)
 
-Dateien direkt auf GitHub bearbeiten (Stift-Symbol) und committen – die PCs
-holen sie innerhalb von ~30 Minuten (Watchdog-Log zeigt
-„Online-Inhalte aktualisiert“).
+Alles in `content/` ist zentral für alle PCs. Entweder direkt auf GitHub
+bearbeiten (Stift-Symbol) oder auf dem Entwickler-PC:
+
+```powershell
+# content\... bearbeiten, dann prüfen (testet u. a. alle CSV-Dateien und config.json):
+dotnet test tests/EnglishSteamTrainer.Core.Tests
+git add content
+git commit -m "Neue Vokabeln"
+git push origin main
+```
+
+Ein neues Release ist dafür **nicht** nötig.
+
+## Wann holen sich die PCs was?
+
+| Was | Wer prüft | Wann | Wirksam |
+|---|---|---|---|
+| `content/` (Vokabeln, Grammatik, Sperrliste, Sprachzuordnung) | Watchdog (SYSTEM) | beim Start und alle 30 Minuten | Sperrliste nach ≤ 15 s; Vokabeln und Sprache beim nächsten Start der Lern-App (= nächste Anmeldung) |
+| Neue Programmversion (Release) | Aufgabe `EnglishSteamTrainer-Update` | 3 Min. nach dem Hochfahren, danach alle 6 Stunden | sofort; offene Lern-App wird neu gestartet |
+
+GitHub liefert geänderte Dateien bis zu ~5 Minuten verzögert aus (Cache).
+
+Sofort abgleichen statt warten (PowerShell als Admin auf dem Kind-PC):
+
+```powershell
+Start-ScheduledTask EnglishSteamTrainer-Update      # neue Version jetzt suchen
+Stop-ScheduledTask  EnglishSteamTrainer-Watchdog    # Watchdog neu starten =
+Start-ScheduledTask EnglishSteamTrainer-Watchdog    #   Inhalte jetzt laden
+```
+
+Kontrolle: `C:\ProgramData\EnglishSteamTrainer\logs\watchdog-<PC-Name>$.log`
+(der SYSTEM-Watchdog heißt nach dem Computerkonto, z. B. `watchdog-DESKTOP-NO7VIKD$.log`)
+(„Online-Inhalte aktualisiert …“, „Gesperrte Konten: tiago (Englisch, zentral)“)
+und `logs\update.log`. Die Fußzeile der App zeigt Version, Sprache samt Herkunft
+und den Stand der Inhalte.
+
+## Sprache und Aufgabenzahl pro Kind
+
+In `content/config.json`:
+
+```json
+"requiredCorrectAnswers": 15,
+"users": [
+  { "computer": "DESKTOP-NO7VIKD", "account": "tiago", "language": "en", "requiredCorrectAnswers": 15 },
+  { "computer": "LAPTOP-LEANDRO",  "account": "leand", "language": "es", "requiredCorrectAnswers": 30 },
+  { "computer": "*",               "account": "max",   "language": "es" }
+]
+```
+
+- `computer` = PC-Name (Befehl `hostname`; `Install.ps1` gibt die passende
+  Zeile am Ende aus). `"*"` oder weglassen = auf jedem PC.
+- `account` = Windows-Kontoname (nicht der Anzeigename, siehe `Get-LocalUser`).
+- `language`: `en` (Englisch) oder `es` (Spanisch). Fehlt sie, gilt die bei
+  `Install.ps1` gewählte Sprache.
+- `requiredCorrectAnswers` (1–200): Fehlt sie, gilt der allgemeine Wert oben.
+  Wirkt sofort (Watchdog prüft alle 15 s; die App beim nächsten Start).
+- Je Einstellung gewinnt ein Eintrag für genau diesen PC vor `"*"`.
+- Ein Tippfehler (z. B. `"spanish"` oder `0` Antworten) lässt die ganze Datei
+  durchfallen – CI wird rot, die PCs behalten den alten Stand.
+- Die Liste legt **nicht** fest, wer gesperrt ist. Gesperrt (und mit Autostart
+  versehen) wird ein Konto erst durch `Install.ps1` auf dem jeweiligen PC – ein
+  Eintrag hier allein sperrt niemanden, das Entfernen hebt keine Sperre auf.
+
+## Vokabeln und Grammatik – Format
 
 `content/<sprache>/vocabulary.csv` – Trennzeichen `;`, Alternativen mit `|`:
 

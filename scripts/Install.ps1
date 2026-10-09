@@ -407,10 +407,13 @@ $watchdogRunning = (Get-ScheduledTask -TaskName $watchdogTaskName).State -eq "Ru
 Write-Host ""
 Write-Host "Fertig! Version $newVersion installiert unter $InstallDir"
 Write-Host ""
-Write-Host "Eingerichtete Konten auf diesem PC:"
+Write-Host "Eingerichtete Konten auf diesem PC ($env:COMPUTERNAME):"
 foreach ($user in $settings.users) {
     Write-Host "  - $($user.account): $($languageNames[$user.language])"
 }
+Write-Host ""
+Write-Host "Sprache zentral pflegen (hat Vorrang): in content/config.json unter ""users"" eintragen:"
+Write-Host "  { ""computer"": ""$env:COMPUTERNAME"", ""account"": ""$TargetUser"", ""language"": ""$Language"" }"
 Write-Host ""
 if ($watchdogRunning) {
     Write-Host "Watchdog laeuft. Log: $(Join-Path $InstallDir 'logs\watchdog-*.log')"
