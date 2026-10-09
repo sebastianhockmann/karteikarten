@@ -8,6 +8,7 @@
     { "name": "Discord", "executables": [ "Discord.exe", "DiscordPTB.exe", "DiscordCanary.exe" ] }
   ],
   "users": [
-    { "computer": "DESKTOP-NO7VIKD", "account": "tiago", "language": "en", "requiredCorrectAnswers": 15 }
+    { "computer": "DESKTOP-NO7VIKD", "account": "tiago", "language": "en", "requiredCorrectAnswers": 15 },
+    { "computer": "Groot", "account": "leand", "language": "es", "requiredCorrectAnswers": 30 }
   ]
 }
