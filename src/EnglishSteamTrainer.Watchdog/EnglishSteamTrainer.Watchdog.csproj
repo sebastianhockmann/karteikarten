@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
@@ -10,10 +10,14 @@
     <ProjectReference Include="..\EnglishSteamTrainer.Core\EnglishSteamTrainer.Core.csproj" />
   </ItemGroup>
 
+  <!-- Die .exe allein startet nicht: sie braucht .dll, .runtimeconfig.json und .deps.json daneben. -->
   <Target Name="CopyToUiOutput" AfterTargets="Build">
+    <ItemGroup>
+      <WatchdogFiles Include="$(TargetDir)$(TargetName).exe;$(TargetDir)$(TargetName).dll;$(TargetDir)$(TargetName).runtimeconfig.json;$(TargetDir)$(TargetName).deps.json" />
+    </ItemGroup>
     <Copy
-      SourceFiles="$(TargetDir)EnglishSteamTrainer.Watchdog.exe"
-      DestinationFolder="..\EnglishSteamTrainer.UI\bin\$(Configuration)\net8.0-windows\" />
+      SourceFiles="@(WatchdogFiles)"
+      DestinationFolder="..\EnglishSteamTrainer.UI\bin\$(Configuration)\$(TargetFramework)\" />
   </Target>
 
 </Project>

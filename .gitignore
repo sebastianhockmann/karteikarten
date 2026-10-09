@@ -10,3 +10,4 @@ TestResults/
 .vscode/
 
 *.pdb
+artifacts/

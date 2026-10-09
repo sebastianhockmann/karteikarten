@@ -1,0 +1,10 @@
+{
+  "requiredCorrectAnswers": 15,
+  "grammarQuestionsPerSession": 5,
+  "blockedApps": [
+    { "name": "Steam", "executables": [ "steam.exe", "steamwebhelper.exe", "GameOverlayUI.exe" ] },
+    { "name": "Chrome", "executables": [ "chrome.exe" ] },
+    { "name": "Edge", "executables": [ "msedge.exe" ] },
+    { "name": "Discord", "executables": [ "Discord.exe", "DiscordPTB.exe", "DiscordCanary.exe" ] }
+  ]
+}

@@ -6,6 +6,7 @@
         Width="1100"
         MinHeight="800"
         MinWidth="1000"
+        WindowState="Maximized"
         Closing="Window_Closing"
         WindowStartupLocation="CenterScreen"
         Background="#FFF7E8">
@@ -19,81 +20,164 @@
 
         <Border Background="#263238" CornerRadius="18" Padding="18">
             <DockPanel>
-                <StackPanel>
-                    <TextBlock Text="🎮 English Steam Trainer" Foreground="White" FontSize="30" FontWeight="Bold"/>
-                    <TextBlock Text="Löse 10 Vokabelkarten. Danach wird Steam für heute freigeschaltet."
-                               Foreground="#DDEEEE" FontSize="15"/>
-                </StackPanel>
-
                 <StackPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
                     <TextBlock x:Name="LevelText" Foreground="#FFE082" FontSize="18" FontWeight="Bold" TextAlignment="Right"/>
                     <TextBlock x:Name="XpText" Foreground="White" FontSize="14" TextAlignment="Right"/>
+                    <TextBlock x:Name="CurrentStreakText" Foreground="{StaticResource GoldBrush}" FontSize="14" FontWeight="Bold" TextAlignment="Right"/>
+                    <TextBlock x:Name="BestStreakText" Foreground="#B0BEC5" FontSize="12" TextAlignment="Right"/>
+                    <Button Content="📊 Verlauf &amp; Punkte"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            FontSize="13"
+                            Padding="12,4"
+                            Margin="0,8,0,0"
+                            HorizontalAlignment="Right"
+                            Click="History_Click"/>
+                </StackPanel>
+
+                <StackPanel>
+                    <TextBlock x:Name="TitleText" Text="🎮 English Steam Trainer" Foreground="White" FontSize="30" FontWeight="Bold"/>
+                    <TextBlock x:Name="SubtitleText"
+                               Foreground="#DDEEEE" FontSize="15"/>
+                    <ItemsControl x:Name="HeaderAppsList"
+                                  Tag="28"
+                                  Margin="0,10,0,0"
+                                  ItemsPanel="{StaticResource HorizontalItemsPanel}"
+                                  ItemTemplate="{StaticResource BlockedAppTemplate}"/>
                 </StackPanel>
             </DockPanel>
         </Border>
 
+        <Border x:Name="LevelUpBanner"
+                Grid.Row="1"
+                Background="{StaticResource GoldBrush}"
+                CornerRadius="16"
+                Padding="16,10"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                Margin="0,10,0,0"
+                Visibility="Collapsed"
+                Panel.ZIndex="10">
+            <TextBlock x:Name="LevelUpBannerText"
+                       FontSize="20"
+                       FontWeight="Bold"
+                       Foreground="#3E2723"/>
+        </Border>
+
         <Border Grid.Row="1" Margin="0,22,0,22" Background="White" CornerRadius="22" Padding="28">
-            <StackPanel>
-                <TextBlock Text="Was heißt dieses Wort auf Deutsch?" FontSize="18" Foreground="#546E7A"/>
-                <TextBlock x:Name="WordText" Text="apple" FontSize="54" FontWeight="Bold" Margin="0,14,0,12"/>
+            <StackPanel MaxWidth="680" HorizontalAlignment="Center" VerticalAlignment="Center">
 
-                <TextBox x:Name="AnswerBox" FontSize="24" Height="48" Padding="8"
-                         KeyDown="AnswerBox_KeyDown"/>
+                <TextBlock x:Name="MascotText"
+                           Text="🦉"
+                           FontSize="64"
+                           HorizontalAlignment="Center"
+                           RenderTransformOrigin="0.5,0.5">
+                    <TextBlock.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform x:Name="MascotScale" ScaleX="1" ScaleY="1"/>
+                            <TranslateTransform x:Name="MascotShift" X="0"/>
+                        </TransformGroup>
+                    </TextBlock.RenderTransform>
+                </TextBlock>
 
-                <WrapPanel Margin="0,18,0,0">
-                    <Button Content="Antwort prüfen" FontSize="18" Padding="18,8" Click="CheckAnswer_Click"/>
-                    <Button Content="Tipp anzeigen" FontSize="18" Padding="18,8" Margin="12,0,0,0" Click="Hint_Click"/>
-                    <Button Content="Nächste Karte" FontSize="18" Padding="18,8" Margin="12,0,0,0" Click="Next_Click"/>
-                </WrapPanel>
+                <StackPanel x:Name="VocabPanel">
+                    <TextBlock x:Name="VocabHeaderText" Text="Was heißt dieses Wort?" FontSize="18" Foreground="#546E7A" HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="WordText" Text="apple" FontSize="54" FontWeight="Bold" Margin="0,14,0,12" HorizontalAlignment="Center"/>
 
-                <TextBlock x:Name="HintText"
-                           FontSize="16"
-                           Foreground="#1976D2"
-                           FontWeight="SemiBold"
-                           Margin="0,12,0,0"
-                           TextWrapping="Wrap"/>
+                    <TextBox x:Name="AnswerBox" FontSize="40" Height="96" Padding="20,8,20,16"
+                             TextAlignment="Center"
+                             TextOptions.TextFormattingMode="Display"
+                             Style="{StaticResource RoundedTextBoxStyle}"
+                             KeyDown="AnswerBox_KeyDown"/>
+
+                    <WrapPanel Margin="0,18,0,0" HorizontalAlignment="Center">
+                        <Button Content="Antwort prüfen" Style="{StaticResource PrimaryButtonStyle}" Click="CheckAnswer_Click"/>
+                        <Button Content="Tipp anzeigen" Style="{StaticResource SecondaryButtonStyle}" Margin="12,0,0,0" Click="Hint_Click"/>
+                        <Button Content="Nächste Karte" Style="{StaticResource SecondaryButtonStyle}" Margin="12,0,0,0" Click="Next_Click"/>
+                    </WrapPanel>
+
+                    <TextBlock x:Name="HintText"
+                               FontSize="16"
+                               Foreground="{StaticResource InfoBlueDarkBrush}"
+                               FontWeight="SemiBold"
+                               Margin="0,12,0,0"
+                               TextWrapping="Wrap"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel x:Name="TensePanel" Visibility="Collapsed">
+                    <TextBlock x:Name="GrammarHeaderText" Text="Welche Form ist richtig?" FontSize="18" Foreground="#546E7A" HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="TenseQuestionText" Text="she / play" FontSize="40" FontWeight="Bold" Margin="0,14,0,18" HorizontalAlignment="Center"/>
+
+                    <UniformGrid Columns="2" Rows="2" HorizontalAlignment="Center">
+                        <Button x:Name="TenseOption1" Style="{StaticResource McOptionButtonStyle}" Click="TenseOption_Click"/>
+                        <Button x:Name="TenseOption2" Style="{StaticResource McOptionButtonStyle}" Click="TenseOption_Click"/>
+                        <Button x:Name="TenseOption3" Style="{StaticResource McOptionButtonStyle}" Click="TenseOption_Click"/>
+                        <Button x:Name="TenseOption4" Style="{StaticResource McOptionButtonStyle}" Click="TenseOption_Click"/>
+                    </UniformGrid>
+                </StackPanel>
 
                 <Border x:Name="FeedbackBox"
-                        Margin="0,12,0,0"
-                        Padding="10"
+                        Margin="0,18,0,0"
+                        Padding="12"
                         Background="#EEEEEE"
-                        CornerRadius="10"
+                        CornerRadius="14"
                         MinHeight="45">
                     <TextBlock x:Name="FeedbackText"
                                Text="Hier erscheint gleich dein Ergebnis."
                                FontSize="16"
                                FontWeight="Bold"
                                TextWrapping="Wrap"
+                               HorizontalAlignment="Center"
                                VerticalAlignment="Center"/>
                 </Border>
 
                 <Grid Margin="0,22,0,0">
                     <ProgressBar x:Name="ProgressBar"
-                 Minimum="0"
-                 Maximum="10"
-                 Height="34"/>
+                                 Style="{StaticResource DuoProgressBarStyle}"
+                                 Minimum="0"
+                                 Maximum="15"
+                                 Height="34"/>
 
                     <TextBlock x:Name="ProgressText"
-               FontSize="16"
-               FontWeight="Bold"
-               Foreground="#263238"
-               HorizontalAlignment="Center"
-               VerticalAlignment="Center"/>
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Foreground="#263238"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
                 </Grid>
 
                 <Border x:Name="RewardBox" Margin="0,14,0,0" Background="#E8F5E9" CornerRadius="12" Padding="10">
-                    <TextBlock x:Name="RewardText"
-                               Text="⭐ Sammle 10 richtige Antworten und schalte Steam frei!"
-                               FontSize="16"
-                               TextWrapping="Wrap"/>
+                    <StackPanel>
+                        <ItemsControl x:Name="RewardAppsList"
+                                      Tag="24"
+                                      HorizontalAlignment="Center"
+                                      Margin="0,0,0,8"
+                                      ItemsPanel="{StaticResource HorizontalItemsPanel}"
+                                      ItemTemplate="{StaticResource BlockedAppTemplate}"/>
+                        <TextBlock x:Name="RewardText"
+                                   FontSize="16"
+                                   TextWrapping="Wrap"
+                                   TextAlignment="Center"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
                 </Border>
             </StackPanel>
         </Border>
 
         <DockPanel Grid.Row="2">
-            <Button x:Name="SteamButton" DockPanel.Dock="Right" Content="Steam starten 🚀"
-                    FontSize="20" Padding="18,10" IsEnabled="False" Click="Steam_Click"/>
-            <TextBlock x:Name="StatusText" VerticalAlignment="Center" FontSize="14" Foreground="#455A64"/>
+            <Button x:Name="SteamButton" DockPanel.Dock="Right" Content="Belohnung starten 🚀"
+                    Style="{StaticResource PrimaryButtonStyle}" IsEnabled="False" Click="Steam_Click"/>
+            <StackPanel VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal">
+                    <ItemsControl x:Name="StatusAppsList"
+                                  Tag="22"
+                                  Margin="0,0,2,0"
+                                  ItemsPanel="{StaticResource HorizontalItemsPanel}"
+                                  ItemTemplate="{StaticResource BlockedAppTemplate}"/>
+                    <TextBlock x:Name="StatusText" VerticalAlignment="Center" FontSize="14" Foreground="#455A64"/>
+                </StackPanel>
+                <TextBlock x:Name="VersionText" FontSize="11" Foreground="#90A4AE" Margin="0,4,0,0"/>
+            </StackPanel>
         </DockPanel>
     </Grid>
 </Window>

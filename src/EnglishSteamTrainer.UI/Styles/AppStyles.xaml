@@ -1,0 +1,159 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Farbpalette -->
+    <SolidColorBrush x:Key="PrimaryGreenBrush" Color="#58CC02"/>
+    <SolidColorBrush x:Key="PrimaryGreenDarkBrush" Color="#46A302"/>
+    <SolidColorBrush x:Key="DangerRedBrush" Color="#FF4B4B"/>
+    <SolidColorBrush x:Key="DangerRedDarkBrush" Color="#D32F2F"/>
+    <SolidColorBrush x:Key="InfoBlueBrush" Color="#1CB0F6"/>
+    <SolidColorBrush x:Key="InfoBlueDarkBrush" Color="#1899D6"/>
+    <SolidColorBrush x:Key="GoldBrush" Color="#FFC800"/>
+    <SolidColorBrush x:Key="NeutralBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="NeutralDarkBrush" Color="#E0E0E0"/>
+    <SolidColorBrush x:Key="FeedbackCorrectBgBrush" Color="#D7FFB8"/>
+    <SolidColorBrush x:Key="FeedbackWrongBgBrush" Color="#FFDFE0"/>
+
+    <!-- Gemeinsames "chunky button" Template: Border mit dickerem unterem Rand,
+         wirkt beim Klicken gedrückt. -->
+    <ControlTemplate x:Key="ChunkyButtonTemplate" TargetType="Button">
+        <Border x:Name="Bg"
+                CornerRadius="16"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                SnapsToDevicePixels="True">
+            <ContentPresenter HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Margin="{TemplateBinding Padding}"
+                               RecognizesAccessKey="True"/>
+        </Border>
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Bg" Property="Margin" Value="0,3,0,-3"/>
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Bg" Property="Opacity" Value="0.92"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="Bg" Property="Opacity" Value="0.45"/>
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource PrimaryGreenBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource PrimaryGreenDarkBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,4"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="FontSize" Value="20"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Padding" Value="18,12"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template" Value="{StaticResource ChunkyButtonTemplate}"/>
+    </Style>
+
+    <Style x:Key="SecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+        <Setter Property="Background" Value="{StaticResource InfoBlueBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource InfoBlueDarkBrush}"/>
+        <Setter Property="FontSize" Value="16"/>
+    </Style>
+
+    <Style x:Key="McOptionButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+        <Setter Property="Background" Value="{StaticResource NeutralBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource NeutralDarkBrush}"/>
+        <Setter Property="Foreground" Value="#3C4043"/>
+        <Setter Property="FontSize" Value="20"/>
+        <Setter Property="Margin" Value="8"/>
+        <Setter Property="Padding" Value="16,14"/>
+    </Style>
+
+    <!-- Abgerundetes Eingabefeld -->
+    <Style x:Key="RoundedTextBoxStyle" TargetType="TextBox">
+        <Setter Property="BorderBrush" Value="{StaticResource InfoBlueBrush}"/>
+        <Setter Property="BorderThickness" Value="2"/>
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border CornerRadius="14"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}">
+                        <ScrollViewer x:Name="PART_ContentHost"
+                                      Margin="{TemplateBinding Padding}"
+                                      VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Abgerundeter Fortschrittsbalken -->
+    <Style x:Key="DuoProgressBarStyle" TargetType="ProgressBar">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ProgressBar">
+                    <Grid>
+                        <Border CornerRadius="17" Background="#ECECEC"/>
+                        <Border x:Name="PART_Track" CornerRadius="17" Background="Transparent" Margin="2"/>
+                        <Border x:Name="PART_Indicator"
+                                CornerRadius="17"
+                                Background="{StaticResource PrimaryGreenBrush}"
+                                HorizontalAlignment="Left"
+                                Margin="2"/>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Maskottchen-Animationen -->
+    <Storyboard x:Key="MascotHappyBounce">
+        <DoubleAnimation Storyboard.TargetName="MascotScale"
+                          Storyboard.TargetProperty="ScaleX"
+                          From="1" To="1.3" Duration="0:0:0.15"
+                          AutoReverse="True"/>
+        <DoubleAnimation Storyboard.TargetName="MascotScale"
+                          Storyboard.TargetProperty="ScaleY"
+                          From="1" To="1.3" Duration="0:0:0.15"
+                          AutoReverse="True"/>
+    </Storyboard>
+
+    <Storyboard x:Key="MascotWrongShake">
+        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="MascotShift"
+                                        Storyboard.TargetProperty="X">
+            <LinearDoubleKeyFrame KeyTime="0:0:0.00" Value="0"/>
+            <LinearDoubleKeyFrame KeyTime="0:0:0.05" Value="-8"/>
+            <LinearDoubleKeyFrame KeyTime="0:0:0.10" Value="8"/>
+            <LinearDoubleKeyFrame KeyTime="0:0:0.15" Value="-6"/>
+            <LinearDoubleKeyFrame KeyTime="0:0:0.20" Value="6"/>
+            <LinearDoubleKeyFrame KeyTime="0:0:0.25" Value="0"/>
+        </DoubleAnimationUsingKeyFrames>
+    </Storyboard>
+
+    <!-- Gesperrte Programme (Liste kommt aus der Online-Konfiguration). Icon, falls
+         unter Icons/<name>.png vorhanden, sonst der Name. Größe über Tag des ItemsControl. -->
+    <ItemsPanelTemplate x:Key="HorizontalItemsPanel">
+        <StackPanel Orientation="Horizontal"/>
+    </ItemsPanelTemplate>
+
+    <DataTemplate x:Key="BlockedAppTemplate">
+        <Grid Margin="0,0,10,0" ToolTip="{Binding Name}" VerticalAlignment="Center">
+            <Image x:Name="AppIcon"
+                   Source="{Binding Icon}"
+                   Width="{Binding Tag, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                   Height="{Binding Tag, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+            <Border x:Name="AppChip" Visibility="Collapsed" Background="#546E7A" CornerRadius="8" Padding="8,3">
+                <TextBlock Text="{Binding Name}" Foreground="White" FontSize="13" FontWeight="SemiBold"/>
+            </Border>
+        </Grid>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding Icon}" Value="{x:Null}">
+                <Setter TargetName="AppIcon" Property="Visibility" Value="Collapsed"/>
+                <Setter TargetName="AppChip" Property="Visibility" Value="Visible"/>
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+
+</ResourceDictionary>

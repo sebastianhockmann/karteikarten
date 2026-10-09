@@ -1,0 +1,135 @@
+<Window x:Class="EnglishSteamTrainer.UI.HistoryWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="📊 Verlauf &amp; Punkte"
+        Height="760"
+        Width="980"
+        WindowStartupLocation="CenterOwner"
+        Background="#FFF7E8">
+
+    <Window.Resources>
+        <Style TargetType="DataGrid">
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#ECEFF1"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="RowHeight" Value="28"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Background" Value="White"/>
+        </Style>
+        <Style x:Key="StatValue" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="26"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#263238"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="StatLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="#607D8B"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+    </Window.Resources>
+
+    <DockPanel Margin="20">
+        <UniformGrid DockPanel.Dock="Top" Columns="4" Margin="0,0,0,14">
+            <Border Background="White" CornerRadius="14" Padding="10" Margin="0,0,8,0">
+                <StackPanel>
+                    <TextBlock x:Name="TotalXpText" Style="{StaticResource StatValue}"/>
+                    <TextBlock Text="XP gesamt" Style="{StaticResource StatLabel}"/>
+                </StackPanel>
+            </Border>
+            <Border Background="White" CornerRadius="14" Padding="10" Margin="4,0">
+                <StackPanel>
+                    <TextBlock x:Name="LevelValueText" Style="{StaticResource StatValue}"/>
+                    <TextBlock x:Name="LevelLabelText" Style="{StaticResource StatLabel}"/>
+                </StackPanel>
+            </Border>
+            <Border Background="White" CornerRadius="14" Padding="10" Margin="4,0">
+                <StackPanel>
+                    <TextBlock x:Name="BestStreakValueText" Style="{StaticResource StatValue}"/>
+                    <TextBlock Text="beste Serie" Style="{StaticResource StatLabel}"/>
+                </StackPanel>
+            </Border>
+            <Border Background="White" CornerRadius="14" Padding="10" Margin="8,0,0,0">
+                <StackPanel>
+                    <TextBlock x:Name="GoalDaysText" Style="{StaticResource StatValue}"/>
+                    <TextBlock Text="Tage mit Tagesziel" Style="{StaticResource StatLabel}"/>
+                </StackPanel>
+            </Border>
+        </UniformGrid>
+
+        <Border x:Name="IntegrityBox"
+                DockPanel.Dock="Top"
+                Background="{StaticResource FeedbackWrongBgBrush}"
+                CornerRadius="12"
+                Padding="12"
+                Margin="0,0,0,14"
+                Visibility="Collapsed">
+            <TextBlock x:Name="IntegrityText"
+                       FontSize="14"
+                       FontWeight="SemiBold"
+                       Foreground="{StaticResource DangerRedDarkBrush}"
+                       TextWrapping="Wrap"/>
+        </Border>
+
+        <Border DockPanel.Dock="Top" Background="#E3F2FD" CornerRadius="12" Padding="12" Margin="0,0,0,14">
+            <StackPanel>
+                <TextBlock Text="So gibt es Punkte" FontSize="15" FontWeight="Bold" Foreground="#0D47A1"/>
+                <ItemsControl x:Name="RulesList" Margin="0,4,0,0">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding StringFormat='• {0}'}" FontSize="13" Foreground="#1565C0"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+
+        <DockPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
+            <Button DockPanel.Dock="Right" Content="Schließen" Style="{StaticResource SecondaryButtonStyle}" Click="Close_Click"/>
+            <TextBlock x:Name="JournalPathText" FontSize="11" Foreground="#90A4AE" VerticalAlignment="Center" TextWrapping="Wrap"/>
+        </DockPanel>
+
+        <TabControl FontSize="14">
+            <TabItem Header="Tage">
+                <DataGrid x:Name="DaysGrid">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Datum" Binding="{Binding Date}" Width="130"/>
+                        <DataGridTextColumn Header="Richtig" Binding="{Binding Correct}" Width="90"/>
+                        <DataGridTextColumn Header="Tippfehler" Binding="{Binding Typos}" Width="100"/>
+                        <DataGridTextColumn Header="Falsch" Binding="{Binding Wrong}" Width="90"/>
+                        <DataGridTextColumn Header="Trefferquote" Binding="{Binding Rate}" Width="110"/>
+                        <DataGridTextColumn Header="XP" Binding="{Binding Xp}" Width="80"/>
+                        <DataGridTextColumn Header="Tagesziel" Binding="{Binding Goal}" Width="*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+            <TabItem Header="Alle Antworten">
+                <DataGrid x:Name="EntriesGrid">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Nr." Binding="{Binding Sequence}" Width="60"/>
+                        <DataGridTextColumn Header="Zeit" Binding="{Binding Time}" Width="140"/>
+                        <DataGridTextColumn Header="Sprache" Binding="{Binding Language}" Width="90"/>
+                        <DataGridTextColumn Header="Aufgabe" Binding="{Binding Prompt}" Width="2*"/>
+                        <DataGridTextColumn Header="Antwort" Binding="{Binding Given}" Width="1.5*"/>
+                        <DataGridTextColumn Header="Ergebnis" Binding="{Binding Result}" Width="110"/>
+                        <DataGridTextColumn Header="XP" Binding="{Binding Xp}" Width="60"/>
+                        <DataGridTextColumn Header="Summe" Binding="{Binding RunningXp}" Width="80"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+            <TabItem Header="Schwierige Wörter">
+                <DataGrid x:Name="MistakesGrid">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Sprache" Binding="{Binding Language}" Width="100"/>
+                        <DataGridTextColumn Header="Wort / Aufgabe" Binding="{Binding Item}" Width="*"/>
+                        <DataGridTextColumn Header="Falsch" Binding="{Binding Wrong}" Width="90"/>
+                        <DataGridTextColumn Header="Richtig" Binding="{Binding Correct}" Width="90"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>

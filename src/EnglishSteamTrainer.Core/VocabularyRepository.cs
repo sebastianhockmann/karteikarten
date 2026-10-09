@@ -1,78 +1,53 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-
 namespace EnglishSteamTrainer.Core;
 
+/// <summary>
+/// Liest vocabulary.csv: Word;German;Hint;GermanAlternatives;WordAlternatives
+/// (erste Zeile = Überschrift, Alternativen mit | getrennt).
+/// </summary>
 public static class VocabularyRepository
 {
-    public static string CsvFilePath => Path.Combine(
-        AppDomain.CurrentDomain.BaseDirectory,
-        "vocabulary.csv");
-
-    public static List<VocabularyCard> LoadDefaultCards()
+    public static List<VocabularyCard> Parse(string csv)
     {
-        var csvFile = CsvFilePath;
-
-        if (!File.Exists(csvFile))
-        {
-            return LoadFallbackCards();
-        }
-
         var cards = new List<VocabularyCard>();
-        var lines = File.ReadAllLines(csvFile);
 
-        foreach (var line in lines[1..])
+        foreach (var line in CsvLines(csv))
         {
-            if (string.IsNullOrWhiteSpace(line))
-                continue;
-
             var parts = line.Split(';');
 
-            if (parts.Length < 3)
+            if (parts.Length < 2
+                || string.IsNullOrWhiteSpace(parts[0])
+                || string.IsNullOrWhiteSpace(parts[1]))
                 continue;
 
-            var alternatives = new List<string>();
-
-            if (parts.Length >= 4)
-            {
-                alternatives = parts[3]
-                    .Split('|', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(x => x.Trim())
-                    .ToList();
-            }
-
             cards.Add(new VocabularyCard(
-        parts[0].Trim(),
-        parts[1].Trim(),
-        parts[2].Trim(),
-        alternatives));
+                parts[0].Trim(),
+                parts[1].Trim(),
+                parts.Length >= 3 ? parts[2].Trim() : "",
+                SplitAlternatives(parts, 3),
+                SplitAlternatives(parts, 4)));
         }
 
-        return cards.Count > 0 ? cards : LoadFallbackCards();
+        return cards;
     }
 
-    private static List<VocabularyCard> LoadFallbackCards()
+    internal static IEnumerable<string> CsvLines(string csv)
     {
-        return new List<VocabularyCard>
+        return csv
+            .Split('\n')
+            .Skip(1)
+            .Select(line => line.TrimEnd('\r'))
+            .Where(line => !string.IsNullOrWhiteSpace(line) && !line.TrimStart().StartsWith('#'));
+    }
+
+    internal static List<string> SplitAlternatives(string[] parts, int index)
     {
-        new VocabularyCard(
-            "apple",
-            "Apfel",
-            "Obst rot oder grün",
-            new List<string>()),
+        if (parts.Length <= index)
+            return [];
 
-        new VocabularyCard(
-            "night",
-            "Nacht",
-            "Dunkle Tageszeit",
-            new List<string>()),
-
-        new VocabularyCard(
-            "happy",
-            "glücklich",
-            "Gegenteil von traurig",
-            new List<string> { "fröhlich", "froh" })
-    };
+        return parts[index]
+            .Split('|', StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => x.Trim())
+            .Where(x => x.Length > 0)
+            .ToList();
     }
 }
