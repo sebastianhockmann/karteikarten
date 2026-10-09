@@ -21,6 +21,16 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
+      # Schutz gegen einen Tag auf dem falschen Commit (z. B. vor dem Commit gesetzt).
+      - name: Tag passt zu Directory.Build.props
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}".TrimStart("v")
+          $props = ([xml](Get-Content Directory.Build.props)).Project.PropertyGroup.Version
+          if ($tag -ne $props) {
+            throw "Tag v$tag passt nicht zu <Version>$props</Version> in Directory.Build.props. Version hochzaehlen, committen, pushen und dann erst taggen."
+          }
+
       - name: Tests
         run: dotnet test tests/EnglishSteamTrainer.Core.Tests -c Release
 
