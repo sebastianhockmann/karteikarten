@@ -29,9 +29,7 @@ public class ContentTests
 
         var text = Read(relativePath);
         var dataLines = text.Split('\n').Skip(1).Count(line => line.Trim().Length > 0 && !line.TrimStart().StartsWith('#'));
-        var parsed = relativePath.EndsWith("vocabulary.csv")
-            ? VocabularyRepository.Parse(text).Count
-            : TenseQuestionRepository.Parse(text).Count;
+        var parsed = ParseKeys(relativePath, text).Count;
 
         Assert.Equal(dataLines, parsed);
     }
@@ -44,13 +42,22 @@ public class ContentTests
             return;
 
         var text = Read(relativePath);
-        var keys = relativePath.EndsWith("vocabulary.csv")
-            ? VocabularyRepository.Parse(text).Select(card => card.Word.ToLowerInvariant()).ToList()
-            : TenseQuestionRepository.Parse(text).Select(question => question.Key).ToList();
+        var keys = ParseKeys(relativePath, text);
 
         var duplicates = keys.GroupBy(key => key).Where(group => group.Count() > 1).Select(group => group.Key);
 
         Assert.Empty(duplicates);
+    }
+
+    private static List<string> ParseKeys(string relativePath, string text)
+    {
+        if (relativePath.EndsWith("vocabulary.csv"))
+            return VocabularyRepository.Parse(text).Select(card => card.Word.ToLowerInvariant()).ToList();
+
+        if (relativePath.EndsWith("verbs.csv"))
+            return VerbFormsRepository.Parse(text).Select(verb => verb.Key.ToLowerInvariant()).ToList();
+
+        return TenseQuestionRepository.Parse(text).Select(question => question.Key).ToList();
     }
 
     [Fact]

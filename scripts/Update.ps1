@@ -9,8 +9,8 @@
     (falls vorher offen) Lern-App wieder starten. Geht beim Kopieren etwas
     schief, wird die Sicherung zurueckgespielt.
 
-    Lernverlauf (unlocks), Logs, Online-Cache und settings.json werden nie
-    angefasst. Log: logs\update.log
+    Lernverlauf (unlocks), Logs, Online-Cache, settings.json und
+    report-upload.json werden nie angefasst. Log: logs\update.log
 
 .EXAMPLE
     .\Update.ps1
@@ -37,7 +37,8 @@ $updateDir = Join-Path $InstallDir "update"
 $backupDir = Join-Path $updateDir "backup"
 $packageName = "EnglishSteamTrainer-win-x64.zip"
 $watchdogTaskName = "EnglishSteamTrainer-Watchdog"
-$dataItems = @("unlocks", "logs", "cache", "settings.json", "update")
+# report-upload.json enthaelt ein Token und darf nicht ins (fuer Benutzer lesbare) Backup.
+$dataItems = @("unlocks", "logs", "cache", "settings.json", "report-upload.json", "update")
 $headers = @{ "User-Agent" = "EnglishSteamTrainer-Updater" }
 
 function Write-Log([string]$message) {

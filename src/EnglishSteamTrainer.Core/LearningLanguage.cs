@@ -4,7 +4,8 @@ public sealed record LearningLanguage(
     string Code,
     string Name,
     string Flag,
-    string[] Articles
+    string[] Articles,
+    bool HasVerbForms = false
 );
 
 public static class Languages
@@ -14,7 +15,7 @@ public static class Languages
     public static readonly string[] GermanArticles = ["der", "die", "das", "ein", "eine"];
 
     public static readonly LearningLanguage English =
-        new("en", "Englisch", "🇬🇧", ["the", "a", "an", "to"]);
+        new("en", "Englisch", "🇬🇧", ["the", "a", "an", "to"], HasVerbForms: true);
 
     public static readonly LearningLanguage Spanish =
         new("es", "Spanisch", "🇪🇸", ["el", "la", "los", "las", "un", "una"]);

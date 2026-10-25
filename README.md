@@ -9,11 +9,12 @@ Kind-Konto freigeschaltet. Lernsprache pro Konto: **Englisch** oder **Spanisch**
 | Was | Wo gepflegt | Wie kommt es auf die PCs |
 |---|---|---|
 | Programmversion | dieses Repo, Git-Tag `v1.2.3` | GitHub-Release → Aufgabe `EnglishSteamTrainer-Update` (beim Hochfahren + alle 6 h) |
-| Vokabeln, Grammatik | `content/<sprache>/*.csv` im Repo | Watchdog lädt alle 30 Min. von GitHub in einen Cache |
+| Vokabeln, Grammatik, unregelmäßige Verben | `content/<sprache>/*.csv` im Repo | Watchdog lädt alle 30 Min. von GitHub in einen Cache |
 | Gesperrte Programme, Anzahl Aufgaben | `content/config.json` im Repo | wie Vokabeln |
 | Konto → Sprache (zentral, hat Vorrang) | `content/config.json` → `users` | wie Vokabeln |
 | Welche Konten gesperrt sind, Sprache als Rückfall | `settings.json` auf dem PC | `scripts\Install.ps1` |
 | Lernverlauf, Punkte | signiertes Lernjournal pro Konto auf dem PC | – |
+| Fortschrittsbericht für Eltern (optional) | wird aus dem Lernjournal erzeugt | Watchdog lädt ihn alle 30 Min. in ein privates GitHub-Repo |
 
 Alles unter `C:\ProgramData\EnglishSteamTrainer` ist **nur für Admins und
 SYSTEM beschreibbar** – das Kind kann weder `settings.json` noch den Online-Cache
@@ -135,6 +136,21 @@ Subject;Verb;Correct;Distractors;Topic
 yo;hablar;hablo;hablas|habla|hablamos;Presente
 ```
 
+`content/en/verbs.csv` – unregelmäßige Verben (nur Englisch). Mehrere richtige
+Schreibweisen mit `|`, die erste wird angezeigt:
+
+```
+Infinitive;SimplePast;PastParticiple;German
+be;was|were;been;sein
+get;got;got|gotten;bekommen
+```
+
+Abgefragt wird: eine der drei Formen und die deutsche Bedeutung sind
+vorgegeben, die anderen beiden Formen tippt das Kind ein. Nur wenn beide
+stimmen, zählt die Aufgabe. Neue Verben = neue Zeile, kein Release nötig.
+Wie viele Verben pro Runde: `verbFormQuestionsPerSession` in `config.json`
+(Standard 5, `0` = aus).
+
 Groß-/Kleinschreibung, Akzente (`adios` = `adiós`), Umlaute (`gruen` = `grün`)
 und Artikel (`der Hund`, `el perro`) spielen bei der Prüfung keine Rolle. Ein
 Tippfehler wird erst ab 5 Buchstaben verziehen (gibt dann weniger Punkte).
@@ -150,6 +166,7 @@ Nach jedem Push prüft die GitHub-Action **CI** alle Dateien in `content/`
 {
   "requiredCorrectAnswers": 15,
   "grammarQuestionsPerSession": 5,
+  "verbFormQuestionsPerSession": 5,
   "blockedApps": [
     { "name": "Steam", "executables": [ "steam.exe", "steamwebhelper.exe" ] },
     { "name": "Firefox", "executables": [ "firefox.exe" ] }
@@ -187,6 +204,35 @@ Zeile von Hand geändert oder gelöscht, zählt ab dort nichts mehr, die App zei
 einen Hinweis, und die veränderte Datei wird als `*.manipuliert-*.txt`
 aufgehoben. (Der Schlüssel steht im Programm – das schützt gegen Bearbeiten im
 Editor, nicht gegen jemanden, der den Code liest.)
+
+## Fortschrittsbericht ansehen (vom Entwickler-/Admin-PC)
+
+Auf Wunsch lädt der Watchdog pro Kind-Konto einen Bericht in ein **privates**
+GitHub-Repo: `https://github.com/<besitzer>/karteikarten-berichte/blob/main/<PC-Name>/<konto>.md`.
+GitHub zeigt darin eine Grafik der richtigen Antworten pro Tag (letzte 30 Tage,
+Linie = Tagesziel) und eine Tabelle mit richtig/falsch/Tagesziel je Tag. Tage
+ohne Antworten stehen als „nicht gelernt“ drin. Hochgeladen wird nur, wenn sich
+etwas geändert hat (neue Antworten oder ein neuer Tag), also höchstens alle 30
+Minuten. Der Verlauf des Repos zeigt daher auch, wann der PC zuletzt online war.
+
+Einmalig einrichten:
+
+1. Auf GitHub ein **privates** Repo `karteikarten-berichte` anlegen (mit README,
+   damit `main` existiert).
+2. Settings → Developer settings → **Fine-grained personal access token**:
+   Repository access *Only select repositories* → `karteikarten-berichte`,
+   Permissions → *Contents: Read and write*, Ablaufdatum notieren.
+3. Auf jedem Kind-PC (PowerShell als Administrator, Programm bereits installiert):
+   ```powershell
+   & ([scriptblock]::Create((irm https://raw.githubusercontent.com/sebastianhockmann/karteikarten/main/scripts/Install.ps1))) -ReportToken github_pat_...
+   ```
+   Anderes Repo: zusätzlich `-ReportRepository besitzer/name`.
+
+Das Token liegt in `C:\ProgramData\EnglishSteamTrainer\report-upload.json`, die
+nur SYSTEM und Admins lesen dürfen (anders als `settings.json`). Es kann nur in
+dieses eine Repo schreiben. **Token abgelaufen:** Im Watchdog-Log steht dann
+„Fortschrittsbericht nicht hochgeladen: HTTP 401 …“. Neues Token erstellen und
+Schritt 3 wiederholen. **Ausschalten:** `report-upload.json` löschen.
 
 ## Neue Version veröffentlichen
 

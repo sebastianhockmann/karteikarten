@@ -22,6 +22,7 @@ public partial class MainWindow : Window
     private readonly LoadedContent<TrainerConfig> _config;
     private readonly LoadedContent<List<VocabularyCard>> _vocabCards;
     private readonly LoadedContent<List<TenseQuestion>> _tenseQuestions;
+    private readonly LoadedContent<List<VerbForms>> _verbForms;
     private readonly Random _random = new();
 
     private readonly Queue<QuizItem> _quizQueue = new();
@@ -43,6 +44,7 @@ public partial class MainWindow : Window
         _config = ContentStore.LoadConfig();
         _vocabCards = ContentStore.LoadVocabulary(_language);
         _tenseQuestions = ContentStore.LoadGrammar(_language);
+        _verbForms = ContentStore.LoadVerbForms(_language);
 
         _advanceTimer = new DispatcherTimer { Interval = AdvanceDelay };
         _advanceTimer.Tick += (_, _) =>
@@ -98,8 +100,13 @@ public partial class MainWindow : Window
 
         VersionText.Text =
             $"Version {AppVersion.Current} · {Environment.MachineName}\\{Environment.UserName}: {_language.Name} ({_assignedLanguage.SourceText}) · {_vocabCards.Value.Count} Vokabeln, " +
-            $"{_tenseQuestions.Value.Count} Grammatik-Fragen · Inhalte: {contentText}";
+            $"{_tenseQuestions.Value.Count} Grammatik-Fragen{VerbFormsCountText} · Inhalte: {contentText}";
     }
+
+    private string VerbFormsCountText =>
+        _language.HasVerbForms ? $", {_verbForms.Value.Count} Verben" : "";
+
+    private TextBox[] VerbBoxes => [VerbBox1, VerbBox2, VerbBox3];
 
     private void BuildQuizQueue()
     {
@@ -108,6 +115,7 @@ public partial class MainWindow : Window
         // Was beim letzten Versuch falsch war, kommt zuerst dran.
         var repeatVocab = _journal.GetItemsToRepeat(_language, JournalKind.Vocabulary);
         var repeatGrammar = _journal.GetItemsToRepeat(_language, JournalKind.Grammar);
+        var repeatVerbs = _journal.GetItemsToRepeat(_language, JournalKind.VerbForms);
 
         var items = new List<QuizItem>();
 
@@ -130,12 +138,23 @@ public partial class MainWindow : Window
             items.Add(new TenseQuizItem(question, options));
         }
 
+        var verbPool = _verbForms.Value
+            .OrderByDescending(verb => repeatVerbs.Contains(verb.Key))
+            .ThenBy(_ => _random.Next())
+            .Take(_config.Value.VerbFormQuestionsPerSession);
+
+        foreach (var verb in verbPool)
+        {
+            items.Add(new VerbFormsQuizItem(verb, _random.Next(VerbForms.FormNames.Length)));
+        }
+
         var ordered = items
             .OrderBy(_ => _random.Next())
             .OrderByDescending(item => item switch
             {
                 VocabQuizItem vocab => repeatVocab.Contains(vocab.Card.Word),
                 TenseQuizItem tense => repeatGrammar.Contains(tense.Question.Key),
+                VerbFormsQuizItem verb => repeatVerbs.Contains(verb.Verb.Key),
                 _ => false
             });
 
@@ -149,6 +168,7 @@ public partial class MainWindow : Window
     {
         VocabPanel.Visibility = Visibility.Collapsed;
         TensePanel.Visibility = Visibility.Collapsed;
+        VerbPanel.Visibility = Visibility.Collapsed;
 
         FeedbackBox.Background = (Brush)FindResource("FeedbackCorrectBgBrush");
         FeedbackText.Text = "🏆 Du hast dein heutiges Ziel schon geschafft!";
@@ -160,6 +180,7 @@ public partial class MainWindow : Window
     {
         VocabPanel.Visibility = Visibility.Collapsed;
         TensePanel.Visibility = Visibility.Collapsed;
+        VerbPanel.Visibility = Visibility.Collapsed;
 
         FeedbackBox.Background = (Brush)FindResource("FeedbackWrongBgBrush");
         FeedbackText.Text = $"😕 Für {_language.Name} wurden keine Aufgaben gefunden. Bitte sag deinen Eltern Bescheid.";
@@ -196,6 +217,10 @@ public partial class MainWindow : Window
             case TenseQuizItem tenseItem:
                 ShowTenseItem(tenseItem);
                 break;
+
+            case VerbFormsQuizItem verbItem:
+                ShowVerbItem(verbItem);
+                break;
         }
     }
 
@@ -203,6 +228,7 @@ public partial class MainWindow : Window
     {
         VocabPanel.Visibility = Visibility.Visible;
         TensePanel.Visibility = Visibility.Collapsed;
+        VerbPanel.Visibility = Visibility.Collapsed;
 
         WordText.Text = item.AskWordToGerman
             ? item.Card.Word
@@ -226,6 +252,7 @@ public partial class MainWindow : Window
     {
         VocabPanel.Visibility = Visibility.Collapsed;
         TensePanel.Visibility = Visibility.Visible;
+        VerbPanel.Visibility = Visibility.Collapsed;
 
         GrammarHeaderText.Text = $"Welche Form ist richtig? ({item.Question.Hint})";
         TenseQuestionText.Text = item.Question.Key;
@@ -240,6 +267,32 @@ public partial class MainWindow : Window
             buttons[i].ClearValue(BackgroundProperty);
             buttons[i].ClearValue(BorderBrushProperty);
         }
+    }
+
+    // Eine Form ist vorgegeben, die anderen beiden werden eingetippt.
+    private void ShowVerbItem(VerbFormsQuizItem item)
+    {
+        VocabPanel.Visibility = Visibility.Collapsed;
+        TensePanel.Visibility = Visibility.Collapsed;
+        VerbPanel.Visibility = Visibility.Visible;
+
+        VerbHeaderText.Text = $"Ergänze die fehlenden Formen ({VerbForms.FormNames[item.GivenForm]} ist vorgegeben)";
+        VerbGermanText.Text = item.Verb.German;
+
+        var boxes = VerbBoxes;
+
+        for (var i = 0; i < boxes.Length; i++)
+        {
+            var given = i == item.GivenForm;
+
+            boxes[i].Text = given ? item.Verb.Display(i) : "";
+            boxes[i].IsReadOnly = given;
+            boxes[i].Focusable = !given;
+            boxes[i].Background = given ? new SolidColorBrush(Color.FromRgb(0xEC, 0xEF, 0xF1)) : Brushes.White;
+            boxes[i].ClearValue(BorderBrushProperty);
+        }
+
+        boxes.First(box => !box.IsReadOnly).Focus();
     }
 
     // Normalerweise läuft der Watchdog bereits als SYSTEM (scripts\Install.ps1).
@@ -287,8 +340,31 @@ public partial class MainWindow : Window
             CheckAnswer();
     }
 
+    // Enter springt ins nächste leere Feld, im letzten Feld wird geprüft.
+    private void VerbBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter)
+            return;
+
+        var next = VerbBoxes
+            .SkipWhile(box => box != sender)
+            .Skip(1)
+            .FirstOrDefault(box => !box.IsReadOnly && string.IsNullOrWhiteSpace(box.Text));
+
+        if (next is not null && !_currentItemSolved)
+            next.Focus();
+        else
+            CheckAnswer();
+    }
+
     private void CheckAnswer()
     {
+        if (_currentItem is VerbFormsQuizItem verbItem)
+        {
+            CheckVerbAnswer(verbItem);
+            return;
+        }
+
         if (_currentItem is not VocabQuizItem vocabItem)
             return;
 
@@ -331,6 +407,62 @@ public partial class MainWindow : Window
             : !string.Equals(given, check.Expected, StringComparison.OrdinalIgnoreCase)
                 ? $"Richtig! Genau geschrieben: {check.Expected}"
                 : "Richtig!";
+
+        HandleCorrectAnswer(entry, note);
+    }
+
+    // Die Lösung bleibt danach stehen, bis Enter oder "Nächste Karte" kommt.
+    private void CheckVerbAnswer(VerbFormsQuizItem item)
+    {
+        if (_currentItemSolved)
+        {
+            _advanceTimer.Stop();
+            ShowItem();
+            return;
+        }
+
+        var boxes = VerbBoxes;
+        var asked = Enumerable.Range(0, boxes.Length).Where(i => i != item.GivenForm).ToList();
+        var empty = asked.Where(i => string.IsNullOrWhiteSpace(boxes[i].Text)).ToList();
+
+        if (empty.Count > 0)
+        {
+            FeedbackText.Text = "✍️ Bitte fülle zuerst alle Felder aus.";
+            FeedbackText.Foreground = Brushes.DarkOrange;
+            FeedbackText.Visibility = Visibility.Visible;
+            boxes[empty[0]].Focus();
+            return;
+        }
+
+        var checks = asked.ToDictionary(
+            i => i,
+            i => AnswerChecker.Check(boxes[i].Text, AnswerChecker.ValidAnswers(item.Verb, i), _language));
+        var result = AnswerChecker.Combine(checks.Values);
+
+        foreach (var (i, check) in checks)
+        {
+            boxes[i].IsReadOnly = true;
+            boxes[i].BorderBrush = check.Result == AnswerResult.Wrong
+                ? (Brush)FindResource("DangerRedBrush")
+                : (Brush)FindResource("PrimaryGreenBrush");
+        }
+
+        var given = string.Join(" / ", asked.Select(i => boxes[i].Text.Trim()));
+        var prompt = $"{item.Verb.Display(item.GivenForm)} ({VerbForms.FormNames[item.GivenForm]}) → " +
+                     string.Join(", ", asked.Select(i => VerbForms.FormNames[i]));
+        var entry = Record(JournalKind.VerbForms, item.Verb.Key, prompt, given, result);
+        var allForms = string.Join(" – ", Enumerable.Range(0, boxes.Length).Select(item.Verb.Display));
+
+        if (result == AnswerResult.Wrong)
+        {
+            _currentItemSolved = true;
+            HandleWrongAnswer([allForms]);
+            return;
+        }
+
+        var note = result == AnswerResult.Typo
+            ? $"Fast richtig! Richtig geschrieben: {allForms}"
+            : $"Richtig! {allForms}";
 
         HandleCorrectAnswer(entry, note);
     }

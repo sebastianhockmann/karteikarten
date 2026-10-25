@@ -95,6 +95,7 @@ async Task SyncContentLoop()
     http.DefaultRequestHeaders.UserAgent.ParseAdd($"EnglishSteamTrainer/{AppVersion.Current}");
 
     var lastErrors = "";
+    var lastReportErrors = "";
 
     while (true)
     {
@@ -119,8 +120,66 @@ async Task SyncContentLoop()
             Log("Fehler beim Abgleich der Online-Inhalte: " + ex.Message);
         }
 
+        var reportErrors = string.Join("; ", await UploadReports(http));
+
+        if (reportErrors != lastReportErrors && reportErrors.Length > 0)
+            Log("Fortschrittsbericht nicht hochgeladen: " + reportErrors);
+
+        lastReportErrors = reportErrors;
+
         await Task.Delay(syncInterval);
     }
+}
+
+// Ohne report-upload.json (Install.ps1 -ReportToken) passiert hier nichts.
+async Task<List<string>> UploadReports(HttpClient http)
+{
+    var errors = new List<string>();
+
+    try
+    {
+        var target = ReportUploadSettings.Load();
+
+        if (target is null)
+            return errors;
+
+        var settings = InstallSettings.Load();
+        var computer = Environment.MachineName;
+
+        foreach (var profile in settings.Users)
+        {
+            try
+            {
+                var sid = profile.TryGetSid();
+
+                if (sid is null)
+                    continue;
+
+                var report = ProgressReport.BuildMarkdown(
+                    computer,
+                    profile.Account,
+                    config.Value.FindLanguage(computer, profile.Account) ?? profile.LearningLanguage,
+                    config.Value.RequiredCorrectAnswersFor(computer, profile.Account),
+                    AnswerJournal.Load(sid),
+                    DateOnly.FromDateTime(DateTime.Now));
+
+                var path = $"{computer}/{profile.Account}.md";
+
+                if (await ReportUpload.UploadAsync(http, target, path, report, $"Bericht {profile.Account} ({computer})"))
+                    Log($"Fortschrittsbericht hochgeladen: {target.Repository}/{path}");
+            }
+            catch (Exception ex)
+            {
+                errors.Add($"{profile.Account}: {ex.Message}");
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        errors.Add(ex.Message);
+    }
+
+    return errors;
 }
 
 List<(SecurityIdentifier Sid, string Account)> GetBlockedUsers()

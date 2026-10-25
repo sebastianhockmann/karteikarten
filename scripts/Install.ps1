@@ -35,6 +35,12 @@
     Baut die App aus dem lokalen Repo statt sie von GitHub zu laden (Entwicklung).
 
 .EXAMPLE
+    .\Install.ps1 -ReportToken github_pat_...
+    Fortschrittsberichte einschalten bzw. ein abgelaufenes Token ersetzen (ohne
+    Neuinstallation). Der Watchdog laedt dann pro Konto einen Bericht in das
+    private Repo -ReportRepository (Standard: <Besitzer>/karteikarten-berichte).
+
+.EXAMPLE
     .\Install.ps1 -TargetUser tiago -Uninstall
     Hebt die Sperre fuer "tiago" auf und entfernt seinen Autostart. Ist danach
     kein Konto mehr eingetragen, werden auch Watchdog und Updater entfernt;
@@ -46,6 +52,8 @@ param(
     [string]$Language,
     [switch]$FromSource,
     [string]$Repository = "sebastianhockmann/karteikarten",
+    [string]$ReportRepository,
+    [string]$ReportToken,
     [switch]$Uninstall,
     [switch]$RemoveFiles
 )
@@ -56,6 +64,7 @@ $ProgressPreference = "SilentlyContinue"
 
 $InstallDir = Join-Path $env:ProgramData "EnglishSteamTrainer"
 $settingsFile = Join-Path $InstallDir "settings.json"
+$reportFile = Join-Path $InstallDir "report-upload.json"
 $legacyUsersFile = Join-Path $InstallDir "blocked-users.txt"
 $watchdogTaskName = "EnglishSteamTrainer-Watchdog"
 $updateTaskName = "EnglishSteamTrainer-Update"
@@ -311,6 +320,33 @@ function Set-InstallPermissions {
     }
 }
 
+function Set-ReportUpload {
+    $repo = $ReportRepository
+    $token = $ReportToken
+
+    if (Test-Path $reportFile) {
+        $existing = Get-Content $reportFile -Raw -Encoding UTF8 | ConvertFrom-Json
+        if (-not $repo) { $repo = $existing.repository }
+        if (-not $token) { $token = $existing.token }
+    }
+
+    if (-not $repo) { $repo = "$(($Repository -split '/')[0])/karteikarten-berichte" }
+    if (-not $token) { throw "Fuer Fortschrittsberichte fehlt -ReportToken." }
+
+    # Anders als settings.json enthaelt die Datei ein Token: nur SYSTEM und Admins
+    # duerfen sie lesen. Erst die leere Datei absichern, dann das Token hineinschreiben.
+    if (-not (Test-Path $reportFile)) { New-Item -ItemType File -Path $reportFile | Out-Null }
+    icacls $reportFile /inheritance:r /grant:r "*S-1-5-18:F" "*S-1-5-32-544:F" | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Konnte die Berechtigungen fuer $reportFile nicht setzen."
+    }
+
+    $json = ConvertTo-Json -InputObject ([ordered]@{ repository = $repo; token = $token.Trim() })
+    [IO.File]::WriteAllText($reportFile, $json, (New-Object Text.UTF8Encoding($false)))
+
+    Write-Host "Fortschrittsberichte: https://github.com/$repo/tree/main/$env:COMPUTERNAME (Upload alle 30 Min.)"
+}
+
 function Install-Package([string]$packageDir) {
     foreach ($requiredFile in @("EnglishSteamTrainer.UI.exe", "EnglishSteamTrainer.Watchdog.exe", "Update.ps1", "version.txt")) {
         if (-not (Test-Path (Join-Path $packageDir $requiredFile))) {
@@ -327,6 +363,12 @@ function Install-Package([string]$packageDir) {
 }
 
 Assert-Admin
+
+# Nur Berichte einrichten / Token erneuern, ohne neu zu installieren.
+if (($ReportToken -or $ReportRepository) -and -not $TargetUser -and (Test-Path $settingsFile)) {
+    Set-ReportUpload
+    return
+}
 
 if ([string]::IsNullOrWhiteSpace($TargetUser)) {
     $TargetUser = Select-TargetUser
@@ -396,6 +438,10 @@ else {
 }
 Write-Settings $settings
 
+if ($ReportToken -or $ReportRepository) {
+    Set-ReportUpload
+}
+
 Remove-LegacyTasks $TargetUser
 Register-SystemTasks
 Register-AppTask $TargetUser
@@ -420,6 +466,9 @@ if ($watchdogRunning) {
 }
 else {
     Write-Warning "Watchdog laeuft NICHT - bitte Aufgabenplanung '$watchdogTaskName' und Logs pruefen."
+}
+if (-not (Test-Path $reportFile)) {
+    Write-Host "Fortschrittsberichte sind aus. Einschalten: Install.ps1 -ReportToken <Token> (siehe README)."
 }
 Write-Host "Updates kommen automatisch (Aufgabe '$updateTaskName', Log: $(Join-Path $InstallDir 'logs\update.log'))."
 Write-Host "Weiteres Konto: Skript erneut ausfuehren. Entfernen: Install.ps1 -TargetUser $TargetUser -Uninstall"

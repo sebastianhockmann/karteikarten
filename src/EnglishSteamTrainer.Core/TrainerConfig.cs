@@ -20,6 +20,7 @@ public sealed class TrainerConfig
 {
     public int RequiredCorrectAnswers { get; set; } = 15;
     public int GrammarQuestionsPerSession { get; set; } = 5;
+    public int VerbFormQuestionsPerSession { get; set; } = 5;
     public List<BlockedApp> BlockedApps { get; set; } = [];
 
     /// <summary>
@@ -118,7 +119,8 @@ public sealed class TrainerConfig
 
             if (config.BlockedApps.Count == 0
                 || config.RequiredCorrectAnswers is < 1 or > 200
-                || config.GrammarQuestionsPerSession is < 0 or > 100)
+                || config.GrammarQuestionsPerSession is < 0 or > 100
+                || config.VerbFormQuestionsPerSession is < 0 or > 100)
                 return null;
 
             return config;

@@ -9,6 +9,7 @@ public static class JournalKind
 {
     public const string Vocabulary = "vocab";
     public const string Grammar = "grammar";
+    public const string VerbForms = "verbs";
     public const string Import = "import";
 }
 

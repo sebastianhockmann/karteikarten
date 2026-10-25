@@ -25,10 +25,13 @@ public static class ContentStore
 
     public static string VocabularyFile(LearningLanguage language) => $"{language.Code}/vocabulary.csv";
     public static string GrammarFile(LearningLanguage language) => $"{language.Code}/grammar.csv";
+    public static string VerbFormsFile(LearningLanguage language) => $"{language.Code}/verbs.csv";
 
     public static IEnumerable<string> AllFiles =>
         Languages.All
-            .SelectMany(language => new[] { VocabularyFile(language), GrammarFile(language) })
+            .SelectMany(language => language.HasVerbForms
+                ? new[] { VocabularyFile(language), GrammarFile(language), VerbFormsFile(language) }
+                : new[] { VocabularyFile(language), GrammarFile(language) })
             .Prepend(ConfigFile);
 
     public static LoadedContent<TrainerConfig> LoadConfig()
@@ -49,6 +52,15 @@ public static class ContentStore
                ?? new LoadedContent<List<TenseQuestion>>([], ContentSource.BuiltIn);
     }
 
+    public static LoadedContent<List<VerbForms>> LoadVerbForms(LearningLanguage language)
+    {
+        if (!language.HasVerbForms)
+            return new LoadedContent<List<VerbForms>>([], ContentSource.BuiltIn);
+
+        return Load(VerbFormsFile(language), text => NonEmpty(VerbFormsRepository.Parse(text)))
+               ?? new LoadedContent<List<VerbForms>>([], ContentSource.BuiltIn);
+    }
+
     /// <summary>
     /// Gleiche Prüfung beim Herunterladen wie beim Laden: Unbrauchbares landet gar
     /// nicht erst im Cache, die letzte gute Version bleibt erhalten.
@@ -63,6 +75,9 @@ public static class ContentStore
 
         if (relativePath.EndsWith("/grammar.csv", StringComparison.Ordinal))
             return TenseQuestionRepository.Parse(text).Count > 0;
+
+        if (relativePath.EndsWith("/verbs.csv", StringComparison.Ordinal))
+            return VerbFormsRepository.Parse(text).Count > 0;
 
         return false;
     }

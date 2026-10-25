@@ -26,6 +26,30 @@ public static class AnswerChecker
             : [card.Word, .. card.WordAlternatives];
     }
 
+    /// <summary>
+    /// Gültige Antworten für eine Verbform. Bei mehreren Schreibweisen zählt jede
+    /// einzeln und auch alle zusammen ("was / were").
+    /// </summary>
+    public static List<string> ValidAnswers(VerbForms verb, int form)
+    {
+        var answers = verb.All[form];
+
+        return answers.Count > 1 ? [.. answers, verb.Display(form)] : [.. answers];
+    }
+
+    /// <summary>
+    /// Ein Feld falsch = alles falsch, ein Tippfehler irgendwo = Tippfehler.
+    /// </summary>
+    public static AnswerResult Combine(IEnumerable<AnswerCheck> checks)
+    {
+        var results = checks.Select(check => check.Result).ToList();
+
+        if (results.Count == 0 || results.Contains(AnswerResult.Wrong))
+            return AnswerResult.Wrong;
+
+        return results.Contains(AnswerResult.Typo) ? AnswerResult.Typo : AnswerResult.Correct;
+    }
+
     public static AnswerCheck Check(string given, IReadOnlyList<string> validAnswers, LearningLanguage language)
     {
         var articles = Languages.GermanArticles.Concat(language.Articles).ToArray();
