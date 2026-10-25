@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Windows;
@@ -9,10 +10,26 @@ namespace EnglishSteamTrainer.UI;
 public partial class App : Application
 {
     private Mutex? _singleInstance;
+    private string? _testJournalFile;
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        if (TestMode.IsRequested(e.Args))
+        {
+            if (IsTestModeAllowed())
+            {
+                StartTestMode(TestMode.Parse(e.Args));
+                return;
+            }
+
+            MessageBox.Show(
+                "Der Testmodus ist für gesperrte Konten nicht verfügbar.",
+                "Testmodus",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
 
         // Nur eine Instanz pro Konto - sonst würden zwei Fenster in dasselbe
         // Lernjournal schreiben (z. B. Autostart plus Doppelklick).
@@ -29,6 +46,35 @@ public partial class App : Application
         LegacyProgress.ImportInto(journal);
 
         var window = new MainWindow(GetLanguage(e.Args), journal);
+        MainWindow = window;
+        window.Show();
+    }
+
+    private static bool IsTestModeAllowed()
+    {
+        try
+        {
+            return TestMode.IsAllowed(InstallSettings.Load(), DailyUnlock.CurrentUser);
+        }
+        catch
+        {
+            // Unlesbare settings.json: lieber kein Testmodus.
+            return false;
+        }
+    }
+
+    // Eigenes Wegwerf-Journal statt des echten, damit Testantworten weder Punkte
+    // noch den Verlauf verändern. Wird beim Beenden gelöscht.
+    private void StartTestMode(TestOptions options)
+    {
+        _testJournalFile = Path.Combine(Path.GetTempPath(), $"EnglishSteamTrainer-test-{Guid.NewGuid():N}.journal.txt");
+        var journal = AnswerJournal.Load(DailyUnlock.CurrentUser, _testJournalFile);
+
+        var language = options.Language is null
+            ? GetLanguage([])
+            : new AssignedLanguage(options.Language, LanguageSource.Default);
+
+        var window = new MainWindow(language, journal, options);
         MainWindow = window;
         window.Show();
     }
@@ -64,6 +110,16 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         _singleInstance?.Dispose();
+
+        try
+        {
+            if (_testJournalFile is not null)
+                File.Delete(_testJournalFile);
+        }
+        catch
+        {
+        }
+
         base.OnExit(e);
     }
 }

@@ -13,7 +13,7 @@ public sealed class ProgressReportTests : IDisposable
 
     private static readonly ReportUploadSettings Target = new()
     {
-        Repository = "eltern/karteikarten-berichte",
+        Repository = "eltern/karteikarten",
         Token = "github_pat_test"
     };
 
@@ -76,7 +76,8 @@ public sealed class ProgressReportTests : IDisposable
         Assert.True(await ReportUpload.UploadAsync(api.Client, Target, "GROOT/leand.md", "Bericht", "Test"));
 
         var put = Assert.Single(api.Puts);
-        Assert.Equal("/repos/eltern/karteikarten-berichte/contents/GROOT/leand.md", put.Path);
+        Assert.Equal("/repos/eltern/karteikarten/contents/GROOT/leand.md", put.Path);
+        Assert.Equal("berichte", put.Body.RootElement.GetProperty("branch").GetString());
         Assert.False(put.Body.RootElement.TryGetProperty("sha", out _));
         Assert.Equal("Bericht", Decode(put.Body.RootElement.GetProperty("content").GetString()!));
     }
@@ -131,6 +132,8 @@ public sealed class ProgressReportTests : IDisposable
                 Puts.Add((request.RequestUri!.AbsolutePath, JsonDocument.Parse(await request.Content!.ReadAsStringAsync(cancellationToken))));
                 return new HttpResponseMessage(HttpStatusCode.Created);
             }
+
+            Assert.Equal("?ref=berichte", request.RequestUri!.Query);
 
             if (Existing is null)
                 return new HttpResponseMessage(HttpStatusCode.NotFound);

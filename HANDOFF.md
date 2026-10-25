@@ -5,13 +5,16 @@ was nicht offensichtlich ist.
 
 ## Status
 
-`main` ist gepusht, zuletzt veröffentlicht: **v1.2.0** (Tags v1.0.0–v1.2.0).
+`main` ist gepusht, zuletzt veröffentlicht: **v1.2.1** (Tags v1.0.0–v1.2.1).
 
 ### Fortschrittsbericht für Eltern (in v1.2.0, Einrichtung offen)
 
 Ziel: Vom Entwickler-/Admin-PC sehen, ob und wie viel gelernt wurde. Gewählt
-wurde: Upload in ein privates GitHub-Repo. Die anderen Optionen waren eine
-Netzwerkfreigabe oder ein Bericht nur lokal. Inhalt: nur die Tagesgrafik.
+wurde (2026-10-25, bewusst gegen ein eigenes privates Repo): Upload in den
+Branch `berichte` des **öffentlichen** Programm-Repos. Berichte sind damit
+öffentlich lesbar, und das Token auf den Kind-PCs hat Schreibrecht auf das
+ganze Programm-Repo (inkl. Tags/Releases). Ein eigenes privates Repo wäre nur
+`-ReportRepository besitzer/name` (Branch dort ebenfalls `berichte` anlegen). Inhalt: nur die Tagesgrafik.
 
 Fertig (Build + Tests grün):
 - `Core/ProgressReport.cs`: Markdown pro Konto mit Mermaid-Grafik
@@ -29,17 +32,14 @@ Fertig (Build + Tests grün):
   `ProgressReportTests.cs`.
 
 Offen, in dieser Reihenfolge:
-1. GitHub-Repo `sebastianhockmann/karteikarten-berichte` anlegen: **privat**,
-   mit README. Auf dem Entwickler-PC ist `gh` nicht installiert. Plan:
-   `winget install GitHub.cli`, dann `gh auth login`, dann
-   `gh repo create karteikarten-berichte --private --add-readme`.
-   Alternativ von Hand auf github.com/new.
-2. Fine-grained Token erstellen. Das geht nur von Hand auf GitHub: nur dieses
-   Repo, Recht *Contents: Read and write*.
+1. ~~Branch `berichte` anlegen~~ – erledigt am 2026-10-25 (verwaister Branch,
+   nur README, im öffentlichen Programm-Repo).
+2. Fine-grained Token erstellen. Das geht nur von Hand auf GitHub: nur Repo
+   `karteikarten`, Recht *Contents: Read and write*.
 3. ~~Committen, Version 1.2.0, Tag pushen~~ – erledigt am 2026-10-25.
 4. Auf den Kind-PCs (DESKTOP-NO7VIKD/tiago, Groot/leand) als Admin
-   `Install.ps1 -ReportToken ...` ausführen. Das geht erst, wenn v1.2.0
-   installiert ist, sonst kennt der Watchdog die Datei nicht.
+   `Install.ps1 -ReportToken ...` ausführen. Das geht erst, wenn **v1.2.1**
+   installiert ist (erst diese Version schreibt in den Branch `berichte`).
 5. Ersten Upload prüfen: Watchdog-Log „Fortschrittsbericht hochgeladen“.
    Zeigt GitHub die Mermaid-Grafik an? Sonst bleibt die Tabelle, oder es
    braucht eine andere Darstellung.
@@ -58,6 +58,16 @@ Offen, in dieser Reihenfolge:
   GitHub bearbeitet (oder die CSV-Dateien in Excel, Trennzeichen `;`), CI prüft.
   Sollte doch einer nötig werden: statische Seite über GitHub Pages, die per
   Commit speichert, keine Desktop-App.
+
+### Testmodus (in v1.2.1, 2026-10-25)
+
+- `--test` (+ `--language`, `--only`), siehe README. Gesperrte Konten bekommen
+  ihn nicht. Selbst wenn: Freigeschaltet wird nur über die signierte Tagesdatei,
+  und die schreibt der Testmodus nie, der SYSTEM-Watchdog sperrt weiter.
+- Kurz geprüft mit `--only verbs` auf DESKTOP-NO7VIKD (Konto sebas): Start,
+  Anzeige, Schließen, Wegwerf-Journal wird gelöscht. Die Verb-Felder habe ich
+  danach kompakter gemacht, weil unten bei 1080p der Belohnungstext
+  abgeschnitten war. Neues Layout nicht mehr angesehen.
 
 ## Umgesetzt am 2026-10-09
 

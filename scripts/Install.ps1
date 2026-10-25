@@ -37,8 +37,8 @@
 .EXAMPLE
     .\Install.ps1 -ReportToken github_pat_...
     Fortschrittsberichte einschalten bzw. ein abgelaufenes Token ersetzen (ohne
-    Neuinstallation). Der Watchdog laedt dann pro Konto einen Bericht in das
-    private Repo -ReportRepository (Standard: <Besitzer>/karteikarten-berichte).
+    Neuinstallation). Der Watchdog laedt dann pro Konto einen Bericht in den
+    Branch "berichte" von -ReportRepository (Standard: dieses Repo, -Repository).
 
 .EXAMPLE
     .\Install.ps1 -TargetUser tiago -Uninstall
@@ -330,7 +330,7 @@ function Set-ReportUpload {
         if (-not $token) { $token = $existing.token }
     }
 
-    if (-not $repo) { $repo = "$(($Repository -split '/')[0])/karteikarten-berichte" }
+    if (-not $repo) { $repo = $Repository }
     if (-not $token) { throw "Fuer Fortschrittsberichte fehlt -ReportToken." }
 
     # Anders als settings.json enthaelt die Datei ein Token: nur SYSTEM und Admins
@@ -341,10 +341,10 @@ function Set-ReportUpload {
         throw "Konnte die Berechtigungen fuer $reportFile nicht setzen."
     }
 
-    $json = ConvertTo-Json -InputObject ([ordered]@{ repository = $repo; token = $token.Trim() })
+    $json = ConvertTo-Json -InputObject ([ordered]@{ repository = $repo; branch = "berichte"; token = $token.Trim() })
     [IO.File]::WriteAllText($reportFile, $json, (New-Object Text.UTF8Encoding($false)))
 
-    Write-Host "Fortschrittsberichte: https://github.com/$repo/tree/main/$env:COMPUTERNAME (Upload alle 30 Min.)"
+    Write-Host "Fortschrittsberichte: https://github.com/$repo/tree/berichte/$env:COMPUTERNAME (Upload alle 30 Min.)"
 }
 
 function Install-Package([string]$packageDir) {

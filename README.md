@@ -14,7 +14,7 @@ Kind-Konto freigeschaltet. Lernsprache pro Konto: **Englisch** oder **Spanisch**
 | Konto → Sprache (zentral, hat Vorrang) | `content/config.json` → `users` | wie Vokabeln |
 | Welche Konten gesperrt sind, Sprache als Rückfall | `settings.json` auf dem PC | `scripts\Install.ps1` |
 | Lernverlauf, Punkte | signiertes Lernjournal pro Konto auf dem PC | – |
-| Fortschrittsbericht für Eltern (optional) | wird aus dem Lernjournal erzeugt | Watchdog lädt ihn alle 30 Min. in ein privates GitHub-Repo |
+| Fortschrittsbericht für Eltern (optional) | wird aus dem Lernjournal erzeugt | Watchdog lädt ihn alle 30 Min. in den Branch `berichte` dieses Repos (**öffentlich**) |
 
 Alles unter `C:\ProgramData\EnglishSteamTrainer` ist **nur für Admins und
 SYSTEM beschreibbar** – das Kind kann weder `settings.json` noch den Online-Cache
@@ -158,6 +158,21 @@ Tippfehler wird erst ab 5 Buchstaben verziehen (gibt dann weniger Punkte).
 Nach jedem Push prüft die GitHub-Action **CI** alle Dateien in `content/`
 (Spaltenzahl, Duplikate, Pflichtfelder). Roter Haken = Datei prüfen.
 
+## Testmodus (Entwickler / Eltern)
+
+```powershell
+& "C:\ProgramData\EnglishSteamTrainer\EnglishSteamTrainer.UI.exe" --test
+dotnet run --project src/EnglishSteamTrainer.UI -- --test --only verbs   # aus dem Repo
+```
+
+- Das Fenster lässt sich jederzeit schließen, der Watchdog wird nicht gestartet.
+- Antworten landen in einem Wegwerf-Journal (wird beim Beenden gelöscht), Punkte,
+  Verlauf und Tagesfortschritt bleiben unverändert, nichts wird freigeschaltet.
+- `--language es`: andere Sprache. `--only vocab|grammar|verbs`: nur eine Art
+  von Aufgaben.
+- Nur für Konten, die **nicht** gesperrt sind (`settings.json`). Startet ein
+  Kind-Konto mit `--test`, kommt ein Hinweis und die normale App.
+
 ## Gesperrte Programme pflegen
 
 `content/config.json`:
@@ -207,8 +222,11 @@ Editor, nicht gegen jemanden, der den Code liest.)
 
 ## Fortschrittsbericht ansehen (vom Entwickler-/Admin-PC)
 
-Auf Wunsch lädt der Watchdog pro Kind-Konto einen Bericht in ein **privates**
-GitHub-Repo: `https://github.com/<besitzer>/karteikarten-berichte/blob/main/<PC-Name>/<konto>.md`.
+Auf Wunsch lädt der Watchdog pro Kind-Konto einen Bericht in den Branch
+`berichte` dieses Repos:
+`https://github.com/sebastianhockmann/karteikarten/blob/berichte/<PC-Name>/<konto>.md`.
+Das Repo ist **öffentlich**, die Berichte (PC-Name, Kontoname, Lerntage) kann
+also jeder lesen. `main`, CI und Releases bleiben davon unberührt.
 GitHub zeigt darin eine Grafik der richtigen Antworten pro Tag (letzte 30 Tage,
 Linie = Tagesziel) und eine Tabelle mit richtig/falsch/Tagesziel je Tag. Tage
 ohne Antworten stehen als „nicht gelernt“ drin. Hochgeladen wird nur, wenn sich
@@ -217,10 +235,9 @@ Minuten. Der Verlauf des Repos zeigt daher auch, wann der PC zuletzt online war.
 
 Einmalig einrichten:
 
-1. Auf GitHub ein **privates** Repo `karteikarten-berichte` anlegen (mit README,
-   damit `main` existiert).
+1. Der Branch `berichte` existiert bereits (ohne Programmcode, nur Berichte).
 2. Settings → Developer settings → **Fine-grained personal access token**:
-   Repository access *Only select repositories* → `karteikarten-berichte`,
+   Repository access *Only select repositories* → `karteikarten`,
    Permissions → *Contents: Read and write*, Ablaufdatum notieren.
 3. Auf jedem Kind-PC (PowerShell als Administrator, Programm bereits installiert):
    ```powershell
@@ -229,8 +246,11 @@ Einmalig einrichten:
    Anderes Repo: zusätzlich `-ReportRepository besitzer/name`.
 
 Das Token liegt in `C:\ProgramData\EnglishSteamTrainer\report-upload.json`, die
-nur SYSTEM und Admins lesen dürfen (anders als `settings.json`). Es kann nur in
-dieses eine Repo schreiben. **Token abgelaufen:** Im Watchdog-Log steht dann
+nur SYSTEM und Admins lesen dürfen (anders als `settings.json`). **Achtung:**
+GitHub kann das Schreibrecht nicht auf einen Branch beschränken. Wer das Token
+hat, kann auch `main` ändern, Tags setzen und Releases anlegen, die alle PCs
+automatisch installieren. Bei Verdacht sofort auf GitHub widerrufen.
+**Token abgelaufen:** Im Watchdog-Log steht dann
 „Fortschrittsbericht nicht hochgeladen: HTTP 401 …“. Neues Token erstellen und
 Schritt 3 wiederholen. **Ausschalten:** `report-upload.json` löschen.
 

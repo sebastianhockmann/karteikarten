@@ -23,6 +23,7 @@ public partial class MainWindow : Window
     private readonly LoadedContent<List<VocabularyCard>> _vocabCards;
     private readonly LoadedContent<List<TenseQuestion>> _tenseQuestions;
     private readonly LoadedContent<List<VerbForms>> _verbForms;
+    private readonly TestOptions? _test;
     private readonly Random _random = new();
 
     private readonly Queue<QuizItem> _quizQueue = new();
@@ -33,10 +34,15 @@ public partial class MainWindow : Window
     private DateOnly _correctTodayDate;
     private int _correctToday;
 
-    public MainWindow(AssignedLanguage assignedLanguage, AnswerJournal journal)
+    /// <param name="test">Gesetzt = Testmodus (siehe <see cref="TestMode"/>).</param>
+    public MainWindow(AssignedLanguage assignedLanguage, AnswerJournal journal, TestOptions? test = null)
     {
         InitializeComponent();
-        StartWatchdog();
+
+        _test = test;
+
+        if (_test is null)
+            StartWatchdog();
 
         _assignedLanguage = assignedLanguage;
         _language = assignedLanguage.Language;
@@ -84,6 +90,15 @@ public partial class MainWindow : Window
         SubtitleText.Text =
             $"Löse {RequiredCorrectAnswers} Aufgaben. Danach werden diese Programme für heute freigeschaltet:";
 
+        if (_test is not null)
+        {
+            Title += " (Testmodus)";
+            TitleText.Text = "🧪 TESTMODUS · " + TitleText.Text;
+            SubtitleText.Text =
+                "Fenster lässt sich jederzeit schließen. Antworten werden nicht gespeichert, nichts wird freigeschaltet." +
+                (_test.Only is null ? "" : $" Nur Aufgaben: {_test.Only}.");
+        }
+
         var apps = BlockedAppView.From(_config.Value.BlockedApps);
         HeaderAppsList.ItemsSource = apps;
         RewardAppsList.ItemsSource = apps;
@@ -119,12 +134,12 @@ public partial class MainWindow : Window
 
         var items = new List<QuizItem>();
 
-        foreach (var card in _vocabCards.Value)
+        foreach (var card in IsIncluded(JournalKind.Vocabulary) ? _vocabCards.Value : [])
         {
             items.Add(new VocabQuizItem(card, _random.Next(2) == 0));
         }
 
-        var tensePool = _tenseQuestions.Value
+        var tensePool = (IsIncluded(JournalKind.Grammar) ? _tenseQuestions.Value : [])
             .OrderByDescending(question => repeatGrammar.Contains(question.Key))
             .ThenBy(_ => _random.Next())
             .Take(_config.Value.GrammarQuestionsPerSession);
@@ -138,7 +153,7 @@ public partial class MainWindow : Window
             items.Add(new TenseQuizItem(question, options));
         }
 
-        var verbPool = _verbForms.Value
+        var verbPool = (IsIncluded(JournalKind.VerbForms) ? _verbForms.Value : [])
             .OrderByDescending(verb => repeatVerbs.Contains(verb.Key))
             .ThenBy(_ => _random.Next())
             .Take(_config.Value.VerbFormQuestionsPerSession);
@@ -163,6 +178,8 @@ public partial class MainWindow : Window
             _quizQueue.Enqueue(item);
         }
     }
+
+    private bool IsIncluded(string kind) => _test?.Only is null || _test.Only == kind;
 
     private void ShowAlreadyDoneState()
     {
@@ -670,6 +687,12 @@ public partial class MainWindow : Window
 
     private void Steam_Click(object sender, RoutedEventArgs e)
     {
+        if (_test is not null)
+        {
+            Close();
+            return;
+        }
+
         AppBlocker.StartSteam(RequiredCorrectAnswers);
         Application.Current.Shutdown();
     }
@@ -728,6 +751,9 @@ public partial class MainWindow : Window
     // Die signierte Datei ist die Wahrheit - genau die prüft auch der Watchdog.
     private bool IsUnlocked()
     {
+        if (_test is not null)
+            return _correctToday >= RequiredCorrectAnswers;
+
         return DailyUnlock.IsUnlockedToday(DailyUnlock.CurrentUser, RequiredCorrectAnswers);
     }
 
@@ -741,6 +767,13 @@ public partial class MainWindow : Window
             return;
 
         _correctTodayDate = today;
+
+        if (_test is not null)
+        {
+            _correctToday = _journal.CorrectOn(today);
+            return;
+        }
+
         _correctToday = Math.Max(
             _journal.CorrectOn(today),
             DailyUnlock.GetCorrectToday(DailyUnlock.CurrentUser));
@@ -748,6 +781,9 @@ public partial class MainWindow : Window
 
     private void SaveCorrectToday()
     {
+        if (_test is not null)
+            return;
+
         try
         {
             DailyUnlock.SetCorrectToday(_correctToday);
@@ -764,7 +800,7 @@ public partial class MainWindow : Window
 
     private void Window_Closing(object? sender, CancelEventArgs e)
     {
-        if (!IsUnlocked())
+        if (_test is null && !IsUnlocked())
         {
             e.Cancel = true;
 
