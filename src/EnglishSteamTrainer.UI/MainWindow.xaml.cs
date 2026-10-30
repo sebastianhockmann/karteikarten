@@ -23,6 +23,7 @@ public partial class MainWindow : Window
     private readonly LoadedContent<List<VocabularyCard>> _vocabCards;
     private readonly LoadedContent<List<TenseQuestion>> _tenseQuestions;
     private readonly LoadedContent<List<VerbForms>> _verbForms;
+    private readonly FocusTopic? _focusTopic;
     private readonly TestOptions? _test;
     private readonly Random _random = new();
 
@@ -51,6 +52,7 @@ public partial class MainWindow : Window
         _vocabCards = ContentStore.LoadVocabulary(_language);
         _tenseQuestions = ContentStore.LoadGrammar(_language);
         _verbForms = ContentStore.LoadVerbForms(_language);
+        _focusTopic = FindFocusTopic();
 
         _advanceTimer = new DispatcherTimer { Interval = AdvanceDelay };
         _advanceTimer.Tick += (_, _) =>
@@ -83,6 +85,17 @@ public partial class MainWindow : Window
         _config.Value.RequiredCorrectAnswersFor(Environment.MachineName, Environment.UserName);
     private string BlockedAppsText => _config.Value.BlockedAppsText;
 
+    // Nur wenn es zum Thema auch Vokabeln gibt - sonst wäre die Anzeige irreführend.
+    private FocusTopic? FindFocusTopic()
+    {
+        var focus = _config.Value.FindFocusTopic(_language, DateOnly.FromDateTime(DateTime.Now));
+
+        return focus is not null && _vocabCards.Value.Any(card => card.HasTopic(focus.Topic)) ? focus : null;
+    }
+
+    private bool IsFocusItem(QuizItem item) =>
+        _focusTopic is not null && item is VocabQuizItem vocab && vocab.Card.HasTopic(_focusTopic.Topic);
+
     private void ApplyLanguageAndConfig()
     {
         Title = $"{_language.Name}-Trainer";
@@ -97,6 +110,11 @@ public partial class MainWindow : Window
             SubtitleText.Text =
                 "Fenster lässt sich jederzeit schließen. Antworten werden nicht gespeichert, nichts wird freigeschaltet." +
                 (_test.Only is null ? "" : $" Nur Aufgaben: {_test.Only}.");
+        }
+
+        if (_focusTopic is not null)
+        {
+            SubtitleText.Text += $"\n🎯 Thema der Woche: {_focusTopic.Topic} (bis {_focusTopic.To:dd.MM.})";
         }
 
         var apps = BlockedAppView.From(_config.Value.BlockedApps);
@@ -115,8 +133,13 @@ public partial class MainWindow : Window
 
         VersionText.Text =
             $"Version {AppVersion.Current} · {Environment.MachineName}\\{Environment.UserName}: {_language.Name} ({_assignedLanguage.SourceText}) · {_vocabCards.Value.Count} Vokabeln, " +
-            $"{_tenseQuestions.Value.Count} Grammatik-Fragen{VerbFormsCountText} · Inhalte: {contentText}";
+            $"{_tenseQuestions.Value.Count} Grammatik-Fragen{VerbFormsCountText}{FocusTopicText} · Inhalte: {contentText}";
     }
+
+    private string FocusTopicText =>
+        _focusTopic is null
+            ? ""
+            : $" · Thema {_focusTopic.Topic}: {_vocabCards.Value.Count(card => card.HasTopic(_focusTopic.Topic))} Vokabeln";
 
     private string VerbFormsCountText =>
         _language.HasVerbForms ? $", {_verbForms.Value.Count} Verben" : "";
@@ -163,8 +186,16 @@ public partial class MainWindow : Window
             items.Add(new VerbFormsQuizItem(verb, _random.Next(VerbForms.FormNames.Length)));
         }
 
-        var ordered = items
-            .OrderBy(_ => _random.Next())
+        var shuffled = items.OrderBy(_ => _random.Next()).ToList();
+
+        // Thema der Woche nach vorn, danach (stabil sortiert) zuerst die Wiederholungen.
+        var mixed = QuizOrder.MixFocus(
+            shuffled.Where(IsFocusItem).ToList(),
+            shuffled.Where(item => !IsFocusItem(item)).ToList(),
+            _config.Value.FocusSharePercent,
+            _random);
+
+        var ordered = mixed
             .OrderByDescending(item => item switch
             {
                 VocabQuizItem vocab => repeatVocab.Contains(vocab.Card.Word),
@@ -254,9 +285,10 @@ public partial class MainWindow : Window
         AnswerBox.Text = "";
         AnswerBox.IsEnabled = true;
 
-        VocabHeaderText.Text = item.AskWordToGerman
-            ? "Was heißt dieses Wort auf Deutsch?"
-            : $"Was heißt dieses Wort auf {_language.Name}?";
+        VocabHeaderText.Text = (IsFocusItem(item) ? $"🎯 {_focusTopic!.Topic} · " : "") +
+            (item.AskWordToGerman
+                ? "Was heißt dieses Wort auf Deutsch?"
+                : $"Was heißt dieses Wort auf {_language.Name}?");
 
         HintText.Text = item.AskWordToGerman
             ? $"{_language.Flag} → 🇩🇪 Übersetze ins Deutsche"

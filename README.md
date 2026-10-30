@@ -124,10 +124,14 @@ In `content/config.json`:
 `content/<sprache>/vocabulary.csv` – Trennzeichen `;`, Alternativen mit `|`:
 
 ```
-Word;German;Hint;GermanAlternatives;WordAlternatives
-perro;Hund;Bellt und wedelt mit dem Schwanz;
-coche;Auto;Hat vier Räder;Wagen;carro
+Word;German;Hint;GermanAlternatives;WordAlternatives;Topics
+perro;Hund;Bellt und wedelt mit dem Schwanz;;;Tiere
+coche;Auto;Hat vier Räder;Wagen;carro;Zuhause & Schule
+queso;Käse;Wird aus Milch gemacht;;;Essen|Party-Essen
 ```
+
+`Topics` (optional, mehrere mit `|`) ordnet ein Wort Themen zu, siehe
+„Thema der Woche“.
 
 `content/<sprache>/grammar.csv` – genau **drei** falsche Antworten:
 
@@ -157,6 +161,34 @@ Tippfehler wird erst ab 5 Buchstaben verziehen (gibt dann weniger Punkte).
 
 Nach jedem Push prüft die GitHub-Action **CI** alle Dateien in `content/`
 (Spaltenzahl, Duplikate, Pflichtfelder). Roter Haken = Datei prüfen.
+
+## Thema der Woche
+
+In `content/config.json` legt `focusTopics` fest, welches Thema in welchem
+Zeitraum geübt wird:
+
+```json
+"focusSharePercent": 70,
+"focusTopics": [
+  { "from": "2026-11-02", "to": "2026-11-08", "language": "es", "topic": "Party-Essen" },
+  { "from": "2026-11-09", "to": "2026-11-15", "topic": "Tiere" }
+]
+```
+
+- `from`/`to`: erster und letzter Tag (einschließlich), Format `JJJJ-MM-TT`.
+- `topic`: muss genau so (Groß-/Kleinschreibung egal) in der Spalte `Topics` der
+  Vokabeln stehen. CI prüft, dass es zu jedem Thema Vokabeln gibt.
+- `language`: `en` oder `es`. Fehlt sie, gilt das Thema für beide Sprachen. Gibt es
+  für denselben Tag einen Eintrag mit und einen ohne Sprache, gewinnt der mit Sprache.
+- `focusSharePercent` (1–100, Standard 70): So viele Prozent der Vokabeln kommen
+  aus dem Thema, bis alle Wörter des Themas einmal dran waren. Danach geht es mit
+  den übrigen Wörtern weiter. Grammatik und Verben laufen unverändert mit. Falsch
+  beantwortete Wörter kommen weiterhin zuerst.
+- Die App zeigt oben „🎯 Thema der Woche: …“ und markiert die Wörter zum Thema.
+- Vorhandene Themen: Tiere, Familie, Essen, Party-Essen, Zahlen, Farben sowie
+  Spanisch: Zuhause & Schule, Eigenschaften, Natur & Zeit, Verben, Begrüßung,
+  Englisch: Schule, Wochentage.
+- Ältere Programmversionen (vor 1.3.0) ignorieren Themen und üben alle Wörter gemischt.
 
 ## Testmodus (Entwickler / Eltern)
 

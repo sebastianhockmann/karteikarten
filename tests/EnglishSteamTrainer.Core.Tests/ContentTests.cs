@@ -68,4 +68,23 @@ public class ContentTests
         Assert.NotNull(config);
         Assert.Contains(config.BlockedApps, app => app.Executables.Contains("steam.exe"));
     }
+
+    [Fact]
+    public void Every_focus_topic_has_vocabulary()
+    {
+        var config = TrainerConfig.TryParse(Read(ContentStore.ConfigFile))!;
+
+        foreach (var focus in config.FocusTopics)
+        {
+            var languages = Languages.Find(focus.Language) is { } language ? [language] : Languages.All;
+
+            foreach (var lang in languages)
+            {
+                var cards = VocabularyRepository.Parse(Read(ContentStore.VocabularyFile(lang)));
+
+                Assert.True(cards.Any(card => card.HasTopic(focus.Topic)),
+                    $"Thema \"{focus.Topic}\" ({focus.From:dd.MM.yyyy}) hat keine Vokabeln in {ContentStore.VocabularyFile(lang)}.");
+            }
+        }
+    }
 }

@@ -11,5 +11,9 @@
   "users": [
     { "computer": "DESKTOP-NO7VIKD", "account": "tiago", "language": "en", "requiredCorrectAnswers": 15 },
     { "computer": "Groot", "account": "leand", "language": "es", "requiredCorrectAnswers": 30 }
+  ],
+  "focusSharePercent": 70,
+  "focusTopics": [
+    { "from": "2026-11-02", "to": "2026-11-08", "language": "es", "topic": "Party-Essen" }
   ]
 }

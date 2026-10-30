@@ -1,61 +1,91 @@
-Word;German;Hint;GermanAlternatives;WordAlternatives
-perro;Hund;Bellt und wedelt mit dem Schwanz;
-gato;Katze;Miaut und schnurrt;Kater
-caballo;Pferd;Großes Tier zum Reiten;
-pájaro;Vogel;Kann fliegen und zwitschert;
-pez;Fisch;Lebt im Wasser;
-madre;Mutter;Weiblicher Elternteil;Mama
-padre;Vater;Männlicher Elternteil;Papa
-hermana;Schwester;Weibliches Geschwister;
-hermano;Bruder;Männliches Geschwister;
-abuela;Großmutter;Mutter von Mama oder Papa;Oma
-abuelo;Großvater;Vater von Mama oder Papa;Opa
-amigo;Freund;Jemand, den man sehr mag;Kumpel
-casa;Haus;Darin wohnt man;Zuhause
-escuela;Schule;Dort lernt man jeden Tag;;colegio
-libro;Buch;Darin kann man lesen;
-mesa;Tisch;Darauf steht das Essen;
-silla;Stuhl;Darauf sitzt man;
-ventana;Fenster;Durch sie schaut man nach draußen;
-puerta;Tür;Durch sie geht man in einen Raum;
-coche;Auto;Hat vier Räder;Wagen;carro
-pan;Brot;Wird aus Mehl gebacken;
-leche;Milch;Weißes Getränk von der Kuh;
-agua;Wasser;Trinkt man, wenn man durstig ist;
-queso;Käse;Wird aus Milch gemacht;
-huevo;Ei;Kommt vom Huhn;
-manzana;Apfel;Obst, rot oder grün;
-plátano;Banane;Gelbes, krummes Obst;;banana
-uno;eins;Die Zahl 1;
-dos;zwei;Die Zahl 2;
-tres;drei;Die Zahl 3;
-cuatro;vier;Die Zahl 4;
-cinco;fünf;Die Zahl 5;
-seis;sechs;Die Zahl 6;
-siete;sieben;Die Zahl 7;
-ocho;acht;Die Zahl 8;
-nueve;neun;Die Zahl 9;
-diez;zehn;Die Zahl 10;
-rojo;rot;Farbe von Erdbeeren;
-azul;blau;Farbe vom Himmel;
-verde;grün;Farbe von Gras;
-amarillo;gelb;Farbe von Zitronen;
-negro;schwarz;Farbe der Nacht;
-blanco;weiß;Farbe von Schnee;
-grande;groß;Gegenteil von klein;
-pequeño;klein;Gegenteil von groß;
-feliz;glücklich;Gegenteil von traurig;fröhlich|froh
-triste;traurig;Gegenteil von glücklich;
-sol;Sonne;Scheint am Tag;
-luna;Mond;Scheint in der Nacht;
-día;Tag;Gegenteil von Nacht;
-noche;Nacht;Dunkle Tageszeit;
-comer;essen;Das macht man mit Essen;
-beber;trinken;Das macht man mit Wasser;
-dormir;schlafen;Das macht man nachts im Bett;
-jugar;spielen;Das macht man mit Freunden;
-hablar;sprechen;Worte mit dem Mund sagen;reden
-hola;hallo;Begrüßung;
-gracias;danke;Sagt man, wenn man etwas bekommt;
-adiós;tschüss;Verabschiedung;auf Wiedersehen
-sí;ja;Gegenteil von nein;
+Word;German;Hint;GermanAlternatives;WordAlternatives;Topics
+perro;Hund;Bellt und wedelt mit dem Schwanz;;;Tiere
+gato;Katze;Miaut und schnurrt;Kater;;Tiere
+caballo;Pferd;Großes Tier zum Reiten;;;Tiere
+pájaro;Vogel;Kann fliegen und zwitschert;;;Tiere
+pez;Fisch;Lebt im Wasser;;;Tiere
+madre;Mutter;Weiblicher Elternteil;Mama;;Familie
+padre;Vater;Männlicher Elternteil;Papa;;Familie
+hermana;Schwester;Weibliches Geschwister;;;Familie
+hermano;Bruder;Männliches Geschwister;;;Familie
+abuela;Großmutter;Mutter von Mama oder Papa;Oma;;Familie
+abuelo;Großvater;Vater von Mama oder Papa;Opa;;Familie
+amigo;Freund;Jemand, den man sehr mag;Kumpel;;Familie
+casa;Haus;Darin wohnt man;Zuhause;;Zuhause & Schule
+escuela;Schule;Dort lernt man jeden Tag;;colegio;Zuhause & Schule
+libro;Buch;Darin kann man lesen;;;Zuhause & Schule
+mesa;Tisch;Darauf steht das Essen;;;Zuhause & Schule
+silla;Stuhl;Darauf sitzt man;;;Zuhause & Schule
+ventana;Fenster;Durch sie schaut man nach draußen;;;Zuhause & Schule
+puerta;Tür;Durch sie geht man in einen Raum;;;Zuhause & Schule
+coche;Auto;Hat vier Räder;Wagen;carro;Zuhause & Schule
+pan;Brot;Wird aus Mehl gebacken;;;Essen|Party-Essen
+leche;Milch;Weißes Getränk von der Kuh;;;Essen
+agua;Wasser;Trinkt man, wenn man durstig ist;;;Essen|Party-Essen
+queso;Käse;Wird aus Milch gemacht;;;Essen|Party-Essen
+huevo;Ei;Kommt vom Huhn;;;Essen
+manzana;Apfel;Obst, rot oder grün;;;Essen
+plátano;Banane;Gelbes, krummes Obst;;banana;Essen
+uno;eins;Die Zahl 1;;;Zahlen
+dos;zwei;Die Zahl 2;;;Zahlen
+tres;drei;Die Zahl 3;;;Zahlen
+cuatro;vier;Die Zahl 4;;;Zahlen
+cinco;fünf;Die Zahl 5;;;Zahlen
+seis;sechs;Die Zahl 6;;;Zahlen
+siete;sieben;Die Zahl 7;;;Zahlen
+ocho;acht;Die Zahl 8;;;Zahlen
+nueve;neun;Die Zahl 9;;;Zahlen
+diez;zehn;Die Zahl 10;;;Zahlen
+rojo;rot;Farbe von Erdbeeren;;;Farben
+azul;blau;Farbe vom Himmel;;;Farben
+verde;grün;Farbe von Gras;;;Farben
+amarillo;gelb;Farbe von Zitronen;;;Farben
+negro;schwarz;Farbe der Nacht;;;Farben
+blanco;weiß;Farbe von Schnee;;;Farben
+grande;groß;Gegenteil von klein;;;Eigenschaften
+pequeño;klein;Gegenteil von groß;;;Eigenschaften
+feliz;glücklich;Gegenteil von traurig;fröhlich|froh;;Eigenschaften
+triste;traurig;Gegenteil von glücklich;;;Eigenschaften
+sol;Sonne;Scheint am Tag;;;Natur & Zeit
+luna;Mond;Scheint in der Nacht;;;Natur & Zeit
+día;Tag;Gegenteil von Nacht;;;Natur & Zeit
+noche;Nacht;Dunkle Tageszeit;;;Natur & Zeit
+comer;essen;Das macht man mit Essen;;;Verben
+beber;trinken;Das macht man mit Wasser;;;Verben
+dormir;schlafen;Das macht man nachts im Bett;;;Verben
+jugar;spielen;Das macht man mit Freunden;;;Verben
+hablar;sprechen;Worte mit dem Mund sagen;reden;;Verben
+hola;hallo;Begrüßung;;;Begrüßung
+gracias;danke;Sagt man, wenn man etwas bekommt;;;Begrüßung
+adiós;tschüss;Verabschiedung;auf Wiedersehen;;Begrüßung
+sí;ja;Gegenteil von nein;;;Begrüßung
+ajo;Knoblauch;Riecht sehr stark, Vampire mögen ihn nicht;;;Party-Essen
+lechuga;Kopfsalat;Grüne Blätter, daraus macht man Salat;Salat;;Party-Essen
+tomate;Tomate;Rotes Gemüse für Salat und Soße;;;Party-Essen
+cebolla;Zwiebel;Beim Schneiden muss man weinen;;;Party-Essen
+pimiento;Paprika;Gibt es in Rot, Gelb und Grün;Paprikaschote;;Party-Essen
+pepino;Gurke;Langes grünes Gemüse;Salatgurke;;Party-Essen
+zanahoria;Karotte;Orange, Hasen lieben sie;Möhre|Mohrrübe;;Party-Essen
+aceituna;Olive;Klein, grün oder schwarz;;oliva;Party-Essen
+ensalada;Salat;Gemüse gemischt in einer Schüssel;;;Party-Essen
+jamón;Schinken;Dünne Scheiben vom Schwein;;;Party-Essen
+salchicha;Würstchen;Kommt auf den Grill;Wurst;;Party-Essen
+pollo;Hähnchen;Fleisch vom Huhn;Hühnchen|Huhn;;Party-Essen
+carne;Fleisch;Kommt vom Tier und wird gegrillt;;;Party-Essen
+arroz;Reis;Kleine weiße Körner, zum Beispiel in der Paella;;;Party-Essen
+patatas fritas;Pommes;Frittierte Kartoffeln;Pommes frites|Chips;;Party-Essen
+tortilla;Kartoffelomelett;Spanischer Klassiker aus Eiern und Kartoffeln;Tortilla|Omelett;;Party-Essen
+sal;Salz;Weiß und macht das Essen salzig;;;Party-Essen
+aceite;Öl;Wird aus Oliven gepresst;Olivenöl;;Party-Essen
+salsa;Soße;Zum Dippen oder über die Nudeln;Sauce|Dip;;Party-Essen
+pastel;Kuchen;Süß, zum Geburtstag mit Kerzen;Torte;tarta;Party-Essen
+helado;Eis;Kalt und süß, schmilzt in der Sonne;Speiseeis;;Party-Essen
+fresa;Erdbeere;Rote Frucht mit kleinen Kernen außen;;;Party-Essen
+uva;Weintraube;Wächst am Weinstock;Traube;;Party-Essen
+sandía;Wassermelone;Außen grün, innen rot;Melone;;Party-Essen
+limón;Zitrone;Gelb und sehr sauer;;;Party-Essen
+zumo;Saft;Aus gepresstem Obst;;jugo;Party-Essen
+refresco;Limonade;Süßes Getränk mit Blubberblasen;Limo|Brause;;Party-Essen
+caramelo;Bonbon;Süßigkeit zum Lutschen;Süßigkeit;;Party-Essen
+chocolate;Schokolade;Süß, braun, schmilzt in der Hand;;;Party-Essen
+palomitas;Popcorn;Aufgeplatzter Mais, gibt es im Kino;;;Party-Essen

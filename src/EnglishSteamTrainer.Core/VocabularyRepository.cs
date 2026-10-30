@@ -1,8 +1,8 @@
 namespace EnglishSteamTrainer.Core;
 
 /// <summary>
-/// Liest vocabulary.csv: Word;German;Hint;GermanAlternatives;WordAlternatives
-/// (erste Zeile = Überschrift, Alternativen mit | getrennt).
+/// Liest vocabulary.csv: Word;German;Hint;GermanAlternatives;WordAlternatives;Topics
+/// (erste Zeile = Überschrift, Alternativen und Themen mit | getrennt).
 /// </summary>
 public static class VocabularyRepository
 {
@@ -24,7 +24,8 @@ public static class VocabularyRepository
                 parts[1].Trim(),
                 parts.Length >= 3 ? parts[2].Trim() : "",
                 SplitAlternatives(parts, 3),
-                SplitAlternatives(parts, 4)));
+                SplitAlternatives(parts, 4),
+                SplitAlternatives(parts, 5)));
         }
 
         return cards;

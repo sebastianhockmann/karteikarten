@@ -7,6 +7,18 @@ was nicht offensichtlich ist.
 
 `main` ist gepusht, zuletzt veröffentlicht: **v1.2.1** (Tags v1.0.0–v1.2.1).
 
+### Thema der Woche (für 1.3.0, 2026-10-30, noch nicht veröffentlicht)
+
+- Neue Spalte `Topics` in `vocabulary.csv`, `focusTopics` + `focusSharePercent`
+  in `config.json` (README „Thema der Woche“). Die Auswahl macht
+  `QuizOrder.MixFocus`, die App zeigt das Thema in der Kopfzeile.
+- Neu: 30 spanische und 26 englische Wörter zum Thema „Party-Essen“. Die vorhandenen
+  Wörter haben Themen bekommen. Eingetragen ist Spanisch, Party-Essen,
+  02.–08.11.2026.
+- Build + 100 Tests grün. **UI nicht gestartet** (zweizeiliger Untertitel und
+  🎯-Kopfzeile auf echtem Bildschirm prüfen; `--test --language es` zeigt das
+  Thema erst ab dem 02.11.).
+
 ### Fortschrittsbericht für Eltern (in v1.2.0, Einrichtung offen)
 
 Ziel: Vom Entwickler-/Admin-PC sehen, ob und wie viel gelernt wurde. Gewählt

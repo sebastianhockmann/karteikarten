@@ -14,6 +14,16 @@ public sealed record UserSettings(
     int? RequiredCorrectAnswers = null);
 
 /// <summary>
+/// Thema der Woche: Vom <paramref name="From"/> bis einschließlich <paramref name="To"/>
+/// kommen Vokabeln mit diesem Thema (Spalte Topics) bevorzugt dran.
+/// </summary>
+/// <param name="Language">Optional, sonst für alle Sprachen.</param>
+public sealed record FocusTopic(DateOnly From, DateOnly To, string Topic, string? Language = null)
+{
+    public bool IsActive(DateOnly date) => From <= date && date <= To;
+}
+
+/// <summary>
 /// Zentrale Einstellungen für alle PCs (content/config.json im GitHub-Repo).
 /// </summary>
 public sealed class TrainerConfig
@@ -29,6 +39,23 @@ public sealed class TrainerConfig
     /// bestimmt weiterhin die Installation auf dem PC (Install.ps1).
     /// </summary>
     public List<UserSettings> Users { get; set; } = [];
+
+    public List<FocusTopic> FocusTopics { get; set; } = [];
+
+    /// <summary>Anteil der Vokabeln aus dem Thema der Woche, solange davon noch welche übrig sind.</summary>
+    public int FocusSharePercent { get; set; } = 70;
+
+    /// <summary>
+    /// Ein Eintrag für genau diese Sprache gewinnt vor einem für alle Sprachen,
+    /// sonst der erste passende in der Liste.
+    /// </summary>
+    public FocusTopic? FindFocusTopic(LearningLanguage language, DateOnly date)
+    {
+        var active = FocusTopics.Where(focus => focus.IsActive(date)).ToList();
+
+        return active.FirstOrDefault(focus => Languages.Find(focus.Language) == language)
+               ?? active.FirstOrDefault(focus => string.IsNullOrWhiteSpace(focus.Language));
+    }
 
     public LearningLanguage? FindLanguage(string computer, string account)
     {
@@ -117,7 +144,17 @@ public sealed class TrainerConfig
                     || user.RequiredCorrectAnswers is < 1 or > 200))
                 return null;
 
+            config.FocusTopics ??= [];
+
+            if (config.FocusTopics.Any(focus =>
+                    string.IsNullOrWhiteSpace(focus.Topic)
+                    || focus.From == default
+                    || focus.To < focus.From
+                    || !string.IsNullOrWhiteSpace(focus.Language) && Languages.Find(focus.Language) is null))
+                return null;
+
             if (config.BlockedApps.Count == 0
+                || config.FocusSharePercent is < 1 or > 100
                 || config.RequiredCorrectAnswers is < 1 or > 200
                 || config.GrammarQuestionsPerSession is < 0 or > 100
                 || config.VerbFormQuestionsPerSession is < 0 or > 100)

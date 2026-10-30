@@ -1,50 +1,76 @@
-Word;German;Hint;GermanAlternatives;WordAlternatives
-apple;Apfel;Obst, rot oder grün;
-banana;Banane;Gelbes, krummes Obst;
-dog;Hund;Bellt und wedelt mit dem Schwanz;
-cat;Katze;Miaut und schnurrt;
-horse;Pferd;Großes Tier zum Reiten;
-rabbit;Hase;Hat lange Ohren und hüpft;Kaninchen
-bird;Vogel;Kann fliegen und zwitschert;
-fish;Fisch;Lebt im Wasser;
-mother;Mutter;Weiblicher Elternteil;Mama
-father;Vater;Männlicher Elternteil;Papa
-sister;Schwester;Weibliches Geschwister;
-brother;Bruder;Männliches Geschwister;
-grandmother;Großmutter;Mutter von Mama oder Papa;Oma
-grandfather;Großvater;Vater von Mama oder Papa;Opa
-friend;Freund;Jemand, den man sehr mag;Freundin
-school;Schule;Dort lernt man jeden Tag;
-teacher;Lehrer;Unterrichtet in der Schule;Lehrerin
-book;Buch;Darin kann man lesen;
-pencil;Bleistift;Zum Schreiben und Malen;
-backpack;Rucksack;Trägt man auf dem Rücken;
-bread;Brot;Wird aus Mehl gebacken;
-milk;Milch;Weißes Getränk von der Kuh;
-water;Wasser;Trinkt man, wenn man durstig ist;
-cheese;Käse;Wird aus Milch gemacht;
-egg;Ei;Kommt vom Huhn;
-cake;Kuchen;Süßes Gebäck zum Geburtstag;
-one;eins;Die Zahl 1;
-two;zwei;Die Zahl 2;
-three;drei;Die Zahl 3;
-four;vier;Die Zahl 4;
-five;fünf;Die Zahl 5;
-six;sechs;Die Zahl 6;
-seven;sieben;Die Zahl 7;
-eight;acht;Die Zahl 8;
-nine;neun;Die Zahl 9;
-ten;zehn;Die Zahl 10;
-monday;Montag;Erster Tag der Schulwoche;
-tuesday;Dienstag;Zweiter Tag der Woche;
-wednesday;Mittwoch;Mitte der Woche;
-thursday;Donnerstag;Vierter Wochentag;
-friday;Freitag;Letzter Schultag;
-saturday;Samstag;Erster Tag am Wochenende;
-sunday;Sonntag;Letzter Tag der Woche;
-red;rot;Farbe von Erdbeeren;
-blue;blau;Farbe vom Himmel;
-green;grün;Farbe von Gras;
-yellow;gelb;Farbe von der Sonne;
-happy;glücklich;Gegenteil von traurig;fröhlich|froh
-night;Nacht;Dunkle Tageszeit;
+Word;German;Hint;GermanAlternatives;WordAlternatives;Topics
+apple;Apfel;Obst, rot oder grün;;;Essen
+banana;Banane;Gelbes, krummes Obst;;;Essen
+dog;Hund;Bellt und wedelt mit dem Schwanz;;;Tiere
+cat;Katze;Miaut und schnurrt;;;Tiere
+horse;Pferd;Großes Tier zum Reiten;;;Tiere
+rabbit;Hase;Hat lange Ohren und hüpft;Kaninchen;;Tiere
+bird;Vogel;Kann fliegen und zwitschert;;;Tiere
+fish;Fisch;Lebt im Wasser;;;Tiere
+mother;Mutter;Weiblicher Elternteil;Mama;;Familie
+father;Vater;Männlicher Elternteil;Papa;;Familie
+sister;Schwester;Weibliches Geschwister;;;Familie
+brother;Bruder;Männliches Geschwister;;;Familie
+grandmother;Großmutter;Mutter von Mama oder Papa;Oma;;Familie
+grandfather;Großvater;Vater von Mama oder Papa;Opa;;Familie
+friend;Freund;Jemand, den man sehr mag;Freundin;;Familie
+school;Schule;Dort lernt man jeden Tag;;;Schule
+teacher;Lehrer;Unterrichtet in der Schule;Lehrerin;;Schule
+book;Buch;Darin kann man lesen;;;Schule
+pencil;Bleistift;Zum Schreiben und Malen;;;Schule
+backpack;Rucksack;Trägt man auf dem Rücken;;;Schule
+bread;Brot;Wird aus Mehl gebacken;;;Essen|Party-Essen
+milk;Milch;Weißes Getränk von der Kuh;;;Essen
+water;Wasser;Trinkt man, wenn man durstig ist;;;Essen|Party-Essen
+cheese;Käse;Wird aus Milch gemacht;;;Essen|Party-Essen
+egg;Ei;Kommt vom Huhn;;;Essen
+cake;Kuchen;Süßes Gebäck zum Geburtstag;;;Essen|Party-Essen
+one;eins;Die Zahl 1;;;Zahlen
+two;zwei;Die Zahl 2;;;Zahlen
+three;drei;Die Zahl 3;;;Zahlen
+four;vier;Die Zahl 4;;;Zahlen
+five;fünf;Die Zahl 5;;;Zahlen
+six;sechs;Die Zahl 6;;;Zahlen
+seven;sieben;Die Zahl 7;;;Zahlen
+eight;acht;Die Zahl 8;;;Zahlen
+nine;neun;Die Zahl 9;;;Zahlen
+ten;zehn;Die Zahl 10;;;Zahlen
+monday;Montag;Erster Tag der Schulwoche;;;Wochentage
+tuesday;Dienstag;Zweiter Tag der Woche;;;Wochentage
+wednesday;Mittwoch;Mitte der Woche;;;Wochentage
+thursday;Donnerstag;Vierter Wochentag;;;Wochentage
+friday;Freitag;Letzter Schultag;;;Wochentage
+saturday;Samstag;Erster Tag am Wochenende;;;Wochentage
+sunday;Sonntag;Letzter Tag der Woche;;;Wochentage
+red;rot;Farbe von Erdbeeren;;;Farben
+blue;blau;Farbe vom Himmel;;;Farben
+green;grün;Farbe von Gras;;;Farben
+yellow;gelb;Farbe von der Sonne;;;Farben
+happy;glücklich;Gegenteil von traurig;fröhlich|froh;;
+night;Nacht;Dunkle Tageszeit;;;
+garlic;Knoblauch;Riecht sehr stark, Vampire mögen ihn nicht;;;Party-Essen
+lettuce;Kopfsalat;Grüne Blätter, daraus macht man Salat;Salat;;Party-Essen
+tomato;Tomate;Rotes Gemüse für Salat und Soße;;;Party-Essen
+onion;Zwiebel;Beim Schneiden muss man weinen;;;Party-Essen
+cucumber;Gurke;Langes grünes Gemüse;Salatgurke;;Party-Essen
+carrot;Karotte;Orange, Hasen lieben sie;Möhre|Mohrrübe;;Party-Essen
+olive;Olive;Klein, grün oder schwarz;;;Party-Essen
+salad;Salat;Gemüse gemischt in einer Schüssel;;;Party-Essen
+ham;Schinken;Dünne Scheiben vom Schwein;;;Party-Essen
+sausage;Würstchen;Kommt auf den Grill;Wurst;;Party-Essen
+chicken;Hähnchen;Fleisch vom Huhn;Hühnchen|Huhn;;Party-Essen
+meat;Fleisch;Kommt vom Tier und wird gegrillt;;;Party-Essen
+rice;Reis;Kleine weiße Körner;;;Party-Essen
+chips;Pommes;Frittierte Kartoffeln (britisches Englisch);Pommes frites;fries|french fries;Party-Essen
+salt;Salz;Weiß und macht das Essen salzig;;;Party-Essen
+sauce;Soße;Zum Dippen oder über die Nudeln;Sauce|Dip;dip;Party-Essen
+ice cream;Eis;Kalt und süß, schmilzt in der Sonne;Speiseeis;;Party-Essen
+strawberry;Erdbeere;Rote Frucht mit kleinen Kernen außen;;;Party-Essen
+grape;Weintraube;Wächst am Weinstock;Traube;;Party-Essen
+watermelon;Wassermelone;Außen grün, innen rot;Melone;;Party-Essen
+lemon;Zitrone;Gelb und sehr sauer;;;Party-Essen
+juice;Saft;Aus gepresstem Obst;;;Party-Essen
+lemonade;Limonade;Süßes Getränk mit Blubberblasen;Limo|Brause;;Party-Essen
+sweets;Süßigkeiten;Bonbons, Gummibärchen und Co.;Bonbons;candy;Party-Essen
+chocolate;Schokolade;Süß, braun, schmilzt in der Hand;;;Party-Essen
+popcorn;Popcorn;Aufgeplatzter Mais, gibt es im Kino;;;Party-Essen
