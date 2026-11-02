@@ -123,6 +123,44 @@ public class QuizPlannerTests
     }
 
     [Fact]
+    public void Verbs_in_the_active_topic_are_not_limited_and_mixed_in_by_share()
+    {
+        var content = new QuizContent(
+            [.. Enumerable.Range(0, 30).Select(i => Card("w" + i))],
+            [.. Enumerable.Range(0, 8).Select(i => Grammar("s" + i, "Present"))],
+            [.. Enumerable.Range(0, 20).Select(i => Verb("v" + i, "Unregelmäßige Verben")), Verb("ohne")]);
+
+        var session = Build(
+            content,
+            Plan("2026-11-02", "2026-11-08", "Unregelmäßige Verben"),
+            config: new TrainerConfig { GrammarQuestionsPerSession = 2, VerbFormQuestionsPerSession = 1 });
+
+        var verbs = session.Items.OfType<VerbFormsQuizItem>().ToList();
+
+        // Alle 20 Themenverben, das Verb ohne Thema zählt zur Obergrenze von 1.
+        Assert.Equal(20, verbs.Count(v => v.Verb.HasTopic("Unregelmäßige Verben")));
+        Assert.True(verbs.Count(v => !v.Verb.HasTopic("Unregelmäßige Verben")) <= 1);
+        Assert.Equal(2, session.Items.OfType<TenseQuizItem>().Count());
+
+        // Etwa 70 % der ersten Aufgaben sind Themenverben.
+        Assert.True(session.Items.Take(15).Count(item => item is VerbFormsQuizItem) >= 7);
+        Assert.Equal("Unregelmäßige Verben", session.Focus?.DisplayName);
+    }
+
+    [Fact]
+    public void Learned_topic_verbs_wait_until_they_are_due()
+    {
+        var content = new QuizContent([Card("cat")], [], [Verb("go", "Unregelmäßige Verben"), Verb("be", "Unregelmäßige Verben")]);
+
+        var session = Build(
+            content,
+            Plan("2026-11-02", "2026-11-08", "Unregelmäßige Verben"),
+            journal: [Answer(0, "go", AnswerResult.Correct, JournalKind.VerbForms)]);
+
+        Assert.Equal(["be"], session.Items.OfType<VerbFormsQuizItem>().Select(v => v.Verb.Key));
+    }
+
+    [Fact]
     public void Grammar_answered_wrong_is_picked_first()
     {
         var content = new QuizContent(

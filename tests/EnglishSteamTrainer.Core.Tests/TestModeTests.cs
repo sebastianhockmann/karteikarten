@@ -25,6 +25,19 @@ public class TestModeTests
     }
 
     [Fact]
+    public void Unlocked_account_gets_developer_mode_unless_child_mode_is_requested()
+    {
+        var notInstalled = new InstallSettings();
+        var locked = InstallSettings.Parse($$"""{ "users": [ { "account": "{{Environment.UserName}}", "language": "en" } ] }""");
+
+        Assert.True(TestMode.UsesDeveloperMode(notInstalled, CurrentUser, []));
+        Assert.True(TestMode.UsesDeveloperMode(notInstalled, CurrentUser, ["--test"]));
+        Assert.False(TestMode.UsesDeveloperMode(notInstalled, CurrentUser, ["--kindmodus"]));
+        Assert.False(TestMode.UsesDeveloperMode(locked, CurrentUser, []));
+        Assert.False(TestMode.UsesDeveloperMode(locked, CurrentUser, ["--test"]));
+    }
+
+    [Fact]
     public void Arguments_are_parsed()
     {
         Assert.True(TestMode.IsRequested(["--test"]));

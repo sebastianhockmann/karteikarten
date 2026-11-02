@@ -166,7 +166,15 @@
                     </span>
                 }
             }
-            <p class="small muted">Blass = steht schon im Plan. Neue Themen entstehen bei den <a href="vokabeln">Vokabeln</a>.</p>
+            @foreach (var language in paletteLanguages.Where(l => l.HasVerbForms))
+            {
+                var withoutTopic = Set[language].Verbs.Count(v => v.Topics is not { Count: > 0 });
+                @if (withoutTopic > 0)
+                {
+                    <p class="small notice warn">@withoutTopic unregelmäßige Verben haben kein Thema und lassen sich deshalb nicht einplanen – auf der Seite <a href="verben">Verben</a> auswählen und „Thema hinzufügen“.</p>
+                }
+            }
+            <p class="small muted">Blass = steht schon im Plan. Neue Themen entstehen bei <a href="vokabeln">Vokabeln</a>, <a href="grammatik">Grammatik</a> und <a href="verben">Verben</a>.</p>
         </div>
     </div>
 </RequireLoaded>

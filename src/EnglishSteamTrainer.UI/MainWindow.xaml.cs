@@ -36,15 +36,16 @@ public partial class MainWindow : Window
     private DateOnly _correctTodayDate;
     private int _correctToday;
 
-    /// <param name="test">Gesetzt = Testmodus (siehe <see cref="TestMode"/>).</param>
-    public MainWindow(AssignedLanguage assignedLanguage, AnswerJournal journal, TestOptions? test = null)
+    /// <param name="test">Gesetzt = Entwicklermodus (siehe <see cref="TestMode"/>).</param>
+    /// <param name="simulatedChild">"--kindmodus" eines nicht gesperrten Kontos: echtes Verhalten zum Testen.</param>
+    public MainWindow(AssignedLanguage assignedLanguage, AnswerJournal journal, TestOptions? test = null, bool simulatedChild = false)
     {
         InitializeComponent();
 
         _test = test;
 
         if (_test is null)
-            StartWatchdog();
+            StartWatchdog(simulatedChild);
 
         _assignedLanguage = assignedLanguage;
         _language = assignedLanguage.Language;
@@ -101,10 +102,10 @@ public partial class MainWindow : Window
 
         if (_test is not null)
         {
-            Title += " (Testmodus)";
-            TitleText.Text = "🧪 TESTMODUS · " + TitleText.Text;
+            Title += " (Entwicklermodus)";
+            TitleText.Text = "🛠 ENTWICKLERMODUS · " + TitleText.Text;
             SubtitleText.Text =
-                "Fenster lässt sich jederzeit schließen. Antworten werden nicht gespeichert, nichts wird freigeschaltet." +
+                "Dieses Konto ist nicht gesperrt: kein Watchdog, Fenster lässt sich schließen, Antworten werden nicht gespeichert." +
                 (_test.Only is null ? "" : $" Nur Aufgaben: {_test.Only}.");
         }
 
@@ -299,7 +300,7 @@ public partial class MainWindow : Window
     // Normalerweise läuft der Watchdog bereits als SYSTEM (scripts\Install.ps1).
     // Das hier ist nur der Ersatz für Entwicklung oder falls er nicht läuft;
     // er sperrt ausschließlich das aktuelle Konto.
-    private static void StartWatchdog()
+    private static void StartWatchdog(bool simulatedChild)
     {
         try
         {
@@ -310,9 +311,8 @@ public partial class MainWindow : Window
             if (!System.IO.File.Exists(watchdogPath))
                 return;
 
-            // Installiert, aber dieses Konto (z. B. Eltern) ist gar nicht gesperrt.
-            if (InstallSettings.Exists
-                && InstallSettings.Load().FindUser(DailyUnlock.CurrentUser) is null)
+            // Nur für gesperrte Konten - oder ausdrücklich mit "--kindmodus" zum Testen.
+            if (!simulatedChild && !TestMode.IsBlockedAccount(DailyUnlock.CurrentUser))
                 return;
 
             if (System.Diagnostics.Process.GetProcessesByName("EnglishSteamTrainer.Watchdog").Length > 0)
@@ -321,6 +321,7 @@ public partial class MainWindow : Window
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
             {
                 FileName = watchdogPath,
+                Arguments = simulatedChild ? TestMode.ChildModeArgument : "",
                 UseShellExecute = true,
                 WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden
             });

@@ -49,7 +49,9 @@ public sealed class QuizSession
 /// 1. Zuletzt falsch beantwortete Aufgaben (aller Arten).
 /// 2. Fällige Wiederholungen und neue Aufgaben laut Karteikasten (<see cref="ReviewSchedule"/>);
 ///    davon kommen <see cref="TrainerConfig.FocusSharePercent"/> % aus den Themen, die gerade im
-///    Lernplan dran sind. Grammatik und Verben werden dazwischen verteilt.
+///    Lernplan dran sind - Vokabeln, Grammatik und Verben gleichermaßen. Grammatik und Verben
+///    außerhalb des Themas sind auf <see cref="TrainerConfig.GrammarQuestionsPerSession"/> bzw.
+///    <see cref="TrainerConfig.VerbFormQuestionsPerSession"/> begrenzt und werden dazwischen verteilt.
 /// 3. Danach als Lückenfüller die übrigen Vokabeln, die am frühesten fälligen zuerst.
 /// Was laut Lernplan erst später drankommt, fehlt ganz (<see cref="LearnerPlan.IsHeldBack"/>).
 /// </summary>
@@ -91,29 +93,46 @@ public static class QuizPlanner
 
         bool IsFocus(IEnumerable<string>? topics) => focus is not null && topics?.Any(focus.HasTopic) == true;
 
-        var share = config.FocusSharePercent;
         var journal = request.Journal;
 
         var vocabOrder = Order(
             vocabulary, card => card.Key, card => IsFocus(card.Topics),
-            ReviewSchedule.Build(journal, language.Code, JournalKind.Vocabulary), today, share, random);
+            ReviewSchedule.Build(journal, language.Code, JournalKind.Vocabulary), today, random);
 
         var grammarOrder = Order(
             grammar, question => question.Key, question => IsFocus([question.Hint]),
-            ReviewSchedule.Build(journal, language.Code, JournalKind.Grammar), today, share, random);
+            ReviewSchedule.Build(journal, language.Code, JournalKind.Grammar), today, random);
 
         var verbOrder = Order(
             verbs, verb => verb.Key, verb => IsFocus(verb.Topics),
-            ReviewSchedule.Build(journal, language.Code, JournalKind.VerbForms), today, share, random);
+            ReviewSchedule.Build(journal, language.Code, JournalKind.VerbForms), today, random);
 
-        var grammarPicked = grammarOrder.All.Take(config.GrammarQuestionsPerSession).ToList();
-        var verbsPicked = verbOrder.All.Take(config.VerbFormQuestionsPerSession).ToList();
+        // Außerhalb des Themas nur so viele wie eingestellt (Wiederholungen zuerst).
+        var grammarPicked = grammarOrder.OutsideFocus.Take(config.GrammarQuestionsPerSession).ToList();
+        var verbsPicked = verbOrder.OutsideFocus.Take(config.VerbFormQuestionsPerSession).ToList();
 
         var repeats = vocabOrder.Repeat.Select(card => Vocab(card, random))
-            .Concat(grammarPicked.Where(grammarOrder.Repeat.Contains).Select(question => Tense(question, random)))
-            .Concat(verbsPicked.Where(verbOrder.Repeat.Contains).Select(verb => Verb(verb, random)))
+            .Concat(grammarOrder.FocusRepeat.Concat(grammarPicked.Where(grammarOrder.Repeat.Contains)).Select(question => Tense(question, random)))
+            .Concat(verbOrder.FocusRepeat.Concat(verbsPicked.Where(verbOrder.Repeat.Contains)).Select(verb => Verb(verb, random)))
             .OrderBy(_ => random.Next())
             .ToList();
+
+        // Thema: alle Arten zusammen, fällige Wiederholungen vor Neuem.
+        var focusDue = vocabOrder.FocusDue.Select(card => Vocab(card, random))
+            .Concat(grammarOrder.FocusDue.Select(question => Tense(question, random)))
+            .Concat(verbOrder.FocusDue.Select(verb => Verb(verb, random)))
+            .OrderBy(_ => random.Next());
+
+        var focusNew = vocabOrder.FocusNew.Select(card => Vocab(card, random))
+            .Concat(grammarOrder.FocusNew.Select(question => Tense(question, random)))
+            .Concat(verbOrder.FocusNew.Select(verb => Verb(verb, random)))
+            .OrderBy(_ => random.Next());
+
+        var active = QuizOrder.MixFocus(
+            focusDue.Concat(focusNew).ToList(),
+            vocabOrder.OtherDue.Concat(vocabOrder.OtherNew).Select(card => Vocab(card, random)).ToList(),
+            config.FocusSharePercent,
+            random);
 
         var extras = grammarPicked.Where(question => !grammarOrder.Repeat.Contains(question)).Select(question => Tense(question, random))
             .Concat(verbsPicked.Where(verb => !verbOrder.Repeat.Contains(verb)).Select(verb => Verb(verb, random)))
@@ -121,9 +140,9 @@ public static class QuizPlanner
             .ToList();
 
         var rest = QuizOrder.Interleave(
-            vocabOrder.Active.Concat(vocabOrder.Later).Select(card => Vocab(card, random)).ToList(),
+            [.. active, .. vocabOrder.Later.Select(card => Vocab(card, random))],
             extras,
-            Math.Max(vocabOrder.Active.Count, MinimumSpread),
+            Math.Max(active.Count, MinimumSpread),
             random);
 
         return new QuizSession([.. repeats, .. rest], focus, heldBack, focusItems);
@@ -144,9 +163,20 @@ public static class QuizPlanner
 
     private static QuizItem Verb(VerbForms verb, Random random) => new VerbFormsQuizItem(verb, random.Next(VerbForms.FormNames.Length));
 
-    private sealed record Ordered<T>(List<T> Repeat, List<T> Active, List<T> Later)
+    /// <param name="Repeat">Letzter Versuch falsch (Thema und Rest).</param>
+    /// <param name="Later">Noch nicht wieder fällig, die am frühesten fälligen zuerst.</param>
+    private sealed record Ordered<T>(
+        List<T> Repeat,
+        List<T> FocusRepeat,
+        List<T> FocusDue,
+        List<T> FocusNew,
+        List<T> OtherDue,
+        List<T> OtherNew,
+        List<T> Later,
+        List<T> LaterOutsideFocus)
     {
-        public IEnumerable<T> All => Repeat.Concat(Active).Concat(Later);
+        /// <summary>Kandidaten außerhalb des Themas in Reihenfolge (für die Begrenzung bei Grammatik/Verben).</summary>
+        public IEnumerable<T> OutsideFocus => Repeat.Except(FocusRepeat).Concat(OtherDue).Concat(OtherNew).Concat(LaterOutsideFocus);
     }
 
     private static Ordered<T> Order<T>(
@@ -155,29 +185,30 @@ public static class QuizPlanner
         Func<T, bool> isFocus,
         Dictionary<string, ReviewState> states,
         DateOnly today,
-        int focusSharePercent,
         Random random)
     {
         var all = items
             .Select(item =>
             {
                 var state = states.GetValueOrDefault(key(item));
-                return (Item: item, State: state, Status: ReviewSchedule.StatusOf(state, today));
+                return (Item: item, State: state, Status: ReviewSchedule.StatusOf(state, today), Focus: isFocus(item));
             })
             .OrderBy(_ => random.Next())
             .ToList();
 
-        // Innerhalb von Thema/Rest: fällige Wiederholungen vor neuen Aufgaben (stabil sortiert,
-        // die zufällige Reihenfolge bleibt sonst erhalten).
-        List<T> Active(bool focus) => all
-            .Where(x => x.Status is ReviewStatus.Due or ReviewStatus.New && isFocus(x.Item) == focus)
-            .OrderBy(x => x.Status == ReviewStatus.Due ? 0 : 1)
-            .Select(x => x.Item)
-            .ToList();
+        List<T> Pick(ReviewStatus status, bool? focus) =>
+            all.Where(x => x.Status == status && (focus is null || x.Focus == focus)).Select(x => x.Item).ToList();
+
+        var later = all.Where(x => x.Status == ReviewStatus.Later).OrderBy(x => x.State!.DueOn).ToList();
 
         return new Ordered<T>(
-            all.Where(x => x.Status == ReviewStatus.Repeat).Select(x => x.Item).ToList(),
-            QuizOrder.MixFocus(Active(focus: true), Active(focus: false), focusSharePercent, random),
-            all.Where(x => x.Status == ReviewStatus.Later).OrderBy(x => x.State!.DueOn).Select(x => x.Item).ToList());
+            Pick(ReviewStatus.Repeat, null),
+            Pick(ReviewStatus.Repeat, true),
+            Pick(ReviewStatus.Due, true),
+            Pick(ReviewStatus.New, true),
+            Pick(ReviewStatus.Due, false),
+            Pick(ReviewStatus.New, false),
+            later.Select(x => x.Item).ToList(),
+            later.Where(x => !x.Focus).Select(x => x.Item).ToList());
     }
 }

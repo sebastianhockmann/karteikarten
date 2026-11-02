@@ -8,6 +8,16 @@
       "topics": [
         "Party-Essen"
       ]
+    },
+    {
+      "from": "2026-11-02",
+      "to": "2026-11-08",
+      "accounts": [
+        "tiago"
+      ],
+      "topics": [
+        "Unregelmäßige Verben"
+      ]
     }
   ]
 }

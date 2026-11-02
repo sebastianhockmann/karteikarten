@@ -16,17 +16,21 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        if (TestMode.IsRequested(e.Args))
-        {
-            if (IsTestModeAllowed())
-            {
-                StartTestMode(TestMode.Parse(e.Args));
-                return;
-            }
+        // Nicht gesperrte Konten (Entwickler-PC, Eltern) bekommen den Entwicklermodus -
+        // sonst würde der Ersatz-Watchdog Browser & Co. des eigenen Kontos beenden.
+        var blocked = TestMode.IsBlockedAccount(DailyUnlock.CurrentUser);
 
+        if (!blocked && !TestMode.IsChildModeRequested(e.Args))
+        {
+            StartTestMode(TestMode.Parse(e.Args));
+            return;
+        }
+
+        if (blocked && TestMode.IsRequested(e.Args))
+        {
             MessageBox.Show(
-                "Der Testmodus ist für gesperrte Konten nicht verfügbar.",
-                "Testmodus",
+                "Der Entwicklermodus ist für gesperrte Konten nicht verfügbar.",
+                "Entwicklermodus",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
@@ -45,22 +49,9 @@ public partial class App : Application
         var journal = AnswerJournal.Load(user);
         LegacyProgress.ImportInto(journal);
 
-        var window = new MainWindow(GetLanguage(e.Args), journal);
+        var window = new MainWindow(GetLanguage(e.Args), journal, simulatedChild: !blocked);
         MainWindow = window;
         window.Show();
-    }
-
-    private static bool IsTestModeAllowed()
-    {
-        try
-        {
-            return TestMode.IsAllowed(InstallSettings.Load(), DailyUnlock.CurrentUser);
-        }
-        catch
-        {
-            // Unlesbare settings.json: lieber kein Testmodus.
-            return false;
-        }
     }
 
     // Eigenes Wegwerf-Journal statt des echten, damit Testantworten weder Punkte

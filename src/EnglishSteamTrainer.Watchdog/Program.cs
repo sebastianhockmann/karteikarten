@@ -11,7 +11,8 @@ using EnglishSteamTrainer.Core;
 // Läuft im Normalbetrieb als SYSTEM (Aufgabenplanung, siehe scripts\Install.ps1):
 // dann kann das Kind ihn nicht beenden, gesperrt werden die Konten aus settings.json,
 // und er hält die Online-Inhalte (Vokabeln, Sperrliste) im Cache aktuell.
-// Von der UI gestartet (Entwicklung/Ersatz) sperrt er nur das eigene Konto.
+// Ohne SYSTEM (Ersatz, von der UI gestartet) sperrt er nur das eigene Konto - und das nur,
+// wenn es laut settings.json gesperrt ist oder "--kindmodus" gesetzt ist (Entwicklermodus).
 
 var pollInterval = TimeSpan.FromSeconds(1);
 var configReloadInterval = TimeSpan.FromSeconds(15);
@@ -43,6 +44,12 @@ var usersLoadedAt = DateTime.MinValue;
 
 var config = ContentStore.LoadConfig();
 var configLoadedAt = DateTime.UtcNow;
+
+if (!runsAsSystem && !TestMode.IsChildModeRequested(args) && !TestMode.IsBlockedAccount(currentUser))
+{
+    Log($"Watchdog {AppVersion.Current}: Konto {Environment.UserName} ist nicht gesperrt (Entwicklermodus) - beendet sich. Zum Testen: {TestMode.ChildModeArgument}.");
+    return;
+}
 
 Log(runsAsSystem
     ? $"Watchdog {AppVersion.Current} gestartet (SYSTEM, Konten aus {InstallSettings.FilePath})."

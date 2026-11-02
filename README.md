@@ -236,6 +236,11 @@ Pflege-Oberfläche unter „Lernplan“):
 - Im Zeitraum eines Eintrags kommen `focusSharePercent` (config.json, 1–100,
   Standard 70) Prozent der neuen und fälligen Aufgaben aus seinen Themen. Die
   App zeigt oben „🎯 Thema der Woche: …“ und markiert die Aufgaben dazu.
+- Grammatik und Verben, die zum Thema gehören, sind dabei **nicht** auf
+  `grammarQuestionsPerSession`/`verbFormQuestionsPerSession` begrenzt – eine
+  „Woche der unregelmäßigen Verben“ besteht also wirklich zu ~70 % aus Verben.
+  Die Grenzen gelten nur für Grammatik und Verben außerhalb des Themas.
+  (Ab 1.4.1; 1.4.0 begrenzt auch Themen-Verben.)
 - `holdBackPlannedTopics` (Standard `true`): Themen, die erst **später** im
   Plan stehen, werden vorher nicht abgefragt. So kann man den Wortschatz für
   das ganze Schuljahr schon eintragen. Themen, die gar nicht im Plan stehen,
@@ -271,20 +276,33 @@ Welche Aufgabe wann wiederkommt, berechnet die App aus dem Lernjournal
 - Es braucht keine Umstellung: Die Fächer ergeben sich aus dem vorhandenen
   Lernjournal.
 
-## Testmodus (Entwickler / Eltern)
+## Entwicklermodus (Entwickler / Eltern)
+
+Gilt **automatisch** für jedes Konto, das nicht gesperrt ist – also auf
+Entwickler-PCs ohne Installation und für Eltern-Konten auf Kind-PCs. Die App
+zeigt dann „🛠 ENTWICKLERMODUS“ in der Kopfzeile.
 
 ```powershell
-& "C:\ProgramData\EnglishSteamTrainer\EnglishSteamTrainer.UI.exe" --test
-dotnet run --project src/EnglishSteamTrainer.UI -- --test --only verbs   # aus dem Repo
+dotnet run --project src/EnglishSteamTrainer.UI                       # aus dem Repo (oder F5)
+dotnet run --project src/EnglishSteamTrainer.UI -- --only verbs --language es
+& "C:\ProgramData\EnglishSteamTrainer\EnglishSteamTrainer.UI.exe"     # Eltern-Konto auf einem Kind-PC
 ```
 
-- Das Fenster lässt sich jederzeit schließen, der Watchdog wird nicht gestartet.
-- Antworten landen in einem Wegwerf-Journal (wird beim Beenden gelöscht), Punkte,
-  Verlauf und Tagesfortschritt bleiben unverändert, nichts wird freigeschaltet.
+- Es wird **kein Watchdog** gestartet – Chrome, Edge, Steam usw. des eigenen
+  Kontos bleiben unberührt. Wird `EnglishSteamTrainer.Watchdog.exe` direkt
+  gestartet, beendet er sich mit einem Hinweis im Log.
+- Das Fenster lässt sich jederzeit schließen. Antworten landen in einem
+  Wegwerf-Journal (wird beim Beenden gelöscht), Punkte, Verlauf und
+  Tagesfortschritt bleiben unverändert, nichts wird freigeschaltet.
 - `--language es`: andere Sprache. `--only vocab|grammar|verbs`: nur eine Art
-  von Aufgaben.
-- Nur für Konten, die **nicht** gesperrt sind (`settings.json`). Startet ein
-  Kind-Konto mit `--test`, kommt ein Hinweis und die normale App.
+  von Aufgaben. `--test` ist weiterhin erlaubt, aber nicht mehr nötig.
+- **`--kindmodus`**: echtes Verhalten für das eigene Konto, z. B. um die Sperre
+  zu testen. Der Ersatz-Watchdog beendet dann sofort Steam, Chrome, Edge und
+  Discord dieses Kontos, bis das Tagesziel erreicht ist, und der Fortschritt
+  zählt. Beenden: Tagesziel lösen oder `Stop-Process -Name EnglishSteamTrainer.Watchdog`.
+- Gesperrte Konten (in `settings.json`) bekommen immer die normale App,
+  `--test` zeigt dort nur einen Hinweis. Ist `settings.json` unlesbar, gilt das
+  Konto als gesperrt.
 
 ## Gesperrte Programme pflegen
 
@@ -410,13 +428,10 @@ dotnet build EnglishSteamTrainer.sln
 dotnet test tests/EnglishSteamTrainer.Core.Tests
 ```
 
-UI starten: `EnglishSteamTrainer.UI` als Startprojekt (F5). Spanisch testen
-mit dem Startargument `--language es` (gilt nur für Konten, die nicht in
-`settings.json` stehen).
-
-**Achtung:** Die UI startet einen Ersatz-Watchdog für das eigene Konto, wenn
-die Watchdog-EXE daneben liegt – der beendet sofort Steam, Chrome, Edge und
-Discord des eigenen Kontos. Vorher Browser-Arbeit speichern.
+UI starten: `EnglishSteamTrainer.UI` als Startprojekt (F5) – läuft im
+Entwicklermodus (siehe oben), sperrt also nichts. Spanisch testen mit dem
+Startargument `--language es`. Nur mit `--kindmodus` startet der Ersatz-Watchdog
+und beendet Steam, Chrome, Edge und Discord des eigenen Kontos.
 
 Lokalen Stand auf diesem PC installieren statt des GitHub-Release (als Admin):
 

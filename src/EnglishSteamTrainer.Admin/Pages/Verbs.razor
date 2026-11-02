@@ -14,6 +14,7 @@
         var search = _search.Trim();
         var rows = content.Verbs
             .Where(v => search.Length == 0 || v.All.Any(f => f.Any(x => x.Contains(search, StringComparison.OrdinalIgnoreCase))) || v.German.Contains(search, StringComparison.OrdinalIgnoreCase))
+            .Where(v => _topicFilter == "" || (_topicFilter == NoTopic ? v.Topics is not { Count: > 0 } : v.HasTopic(_topicFilter)))
             .ToList();
     }
 
@@ -56,14 +57,41 @@
 
     <div class="row" style="margin-bottom:0.75rem">
         <input type="search" placeholder="Suchen …" @bind="_search" @bind:event="oninput" />
+        <select @bind="_topicFilter">
+            <option value="">Alle Themen</option>
+            <option value="@NoTopic">(ohne Thema) (@content.Verbs.Count(v => v.Topics is not { Count: > 0 }))</option>
+            @foreach (var topic in content.Verbs.SelectMany(v => v.Topics ?? []).Distinct(TopicNames.Comparer).Order(StringComparer.OrdinalIgnoreCase))
+            {
+                <option value="@topic">@topic (@content.Verbs.Count(v => v.HasTopic(topic)))</option>
+            }
+        </select>
         <span class="muted small">@rows.Count von @content.Verbs.Count</span>
         <span class="grow"></span>
         <button class="primary" @onclick="New">+ Neues Verb</button>
     </div>
 
+    @if (_selected.Count > 0)
+    {
+        <div class="panel row">
+            <b>@_selected.Count ausgewählt:</b>
+            <input list="verb-topics" placeholder="Thema" @bind="_bulkTopic" @bind:event="oninput" />
+            <datalist id="verb-topics">
+                @foreach (var topic in topics)
+                {
+                    <option value="@topic"></option>
+                }
+            </datalist>
+            <button disabled="@string.IsNullOrWhiteSpace(_bulkTopic)" @onclick="() => BulkTopic(content, add: true)">Thema hinzufügen</button>
+            <button disabled="@string.IsNullOrWhiteSpace(_bulkTopic)" @onclick="() => BulkTopic(content, add: false)">Thema entfernen</button>
+            <span class="grow"></span>
+            <button class="link" @onclick="() => _selected.Clear()">Auswahl aufheben</button>
+        </div>
+    }
+
     <table class="data">
         <thead>
             <tr>
+                <th style="width:2rem"><input type="checkbox" checked="@(rows.Count > 0 && rows.All(_selected.Contains))" @onchange="e => SelectAll(rows, (bool)e.Value!)" /></th>
                 @foreach (var name in VerbForms.FormNames)
                 {
                     <th>@name</th>
@@ -75,7 +103,8 @@
         <tbody>
             @foreach (var verb in rows)
             {
-                <tr class="clickable" @onclick="() => Edit(verb)">
+                <tr class="clickable @(_selected.Contains(verb) ? "selected" : "")" @onclick="() => Edit(verb)">
+                    <td @onclick:stopPropagation="true"><input type="checkbox" checked="@_selected.Contains(verb)" @onchange="e => Toggle(verb, (bool)e.Value!)" /></td>
                     <td><b>@verb.Display(0)</b></td>
                     <td>@verb.Display(1)</td>
                     <td>@verb.Display(2)</td>
@@ -93,7 +122,12 @@
 </RequireLoaded>
 
 @code {
+    private const string NoTopic = "__ohne__";
+
     private string _search = "";
+    private string _topicFilter = "";
+    private string _bulkTopic = "";
+    private readonly HashSet<VerbForms> _selected = new(ReferenceEqualityComparer.Instance);
     private Draft? _editing;
     private VerbForms? _original;
 
@@ -148,6 +182,36 @@
 
         content.Verbs.RemoveAll(v => ReferenceEquals(v, _original));
         _editing = null;
+        Changed();
+    }
+
+    private void Toggle(VerbForms verb, bool selected)
+    {
+        if (selected) _selected.Add(verb); else _selected.Remove(verb);
+    }
+
+    private void SelectAll(List<VerbForms> rows, bool selected)
+    {
+        foreach (var verb in rows) Toggle(verb, selected);
+    }
+
+    private void BulkTopic(LanguageContent content, bool add)
+    {
+        var topic = _bulkTopic.Trim();
+        topic = content.Topics.FirstOrDefault(t => TopicNames.Same(t, topic)) ?? topic;
+
+        for (var i = 0; i < content.Verbs.Count; i++)
+        {
+            if (!_selected.Contains(content.Verbs[i]))
+                continue;
+
+            var topics = (content.Verbs[i].Topics ?? []).Where(t => !TopicNames.Same(t, topic)).ToList();
+            if (add) topics.Add(topic);
+            content.Verbs[i] = content.Verbs[i] with { Topics = topics };
+        }
+
+        _selected.Clear();
+        _bulkTopic = "";
         Changed();
     }
 

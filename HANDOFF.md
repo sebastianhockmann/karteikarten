@@ -5,9 +5,32 @@ was nicht offensichtlich ist.
 
 ## Status
 
-Zuletzt veröffentlicht: **v1.3.0**. In Arbeit (nicht committet): **1.4.0**.
+Zuletzt veröffentlicht: **v1.4.0** (2026-11-02).
 
-### Lernplan, Karteikasten, Pflege-Oberfläche (für 1.4.0, 2026-11-02)
+### Verben im Lernplan (für 1.4.1, 2026-11-02)
+
+- Alle unregelmäßigen Verben haben das Thema „Unregelmäßige Verben“; tiago hat
+  es im Lernplan für 02.–08.11. (vorher fehlte den Verben ein Thema, deshalb
+  ließen sie sich nicht einplanen).
+- `QuizPlanner`: Grammatik/Verben des aktiven Themas sind nicht mehr durch
+  `grammarQuestionsPerSession`/`verbFormQuestionsPerSession` begrenzt und
+  laufen im Themenanteil mit den Themenvokabeln. Wirkt erst mit Release 1.4.1.
+- Oberfläche: Verben-Seite mit Themenfilter und Mehrfachauswahl („Thema
+  hinzufügen/entfernen“), Lernplan-Palette weist auf Verben ohne Thema hin.
+
+### Entwicklermodus (für 1.4.1, 2026-11-02)
+
+Anlass: Auf dem Entwickler-PC (ohne Installation) startete die UI im
+Normalmodus den Ersatz-Watchdog, der Chrome/Edge des Entwicklerkontos beendete
+und auch nach dem Schließen weiterlief. Jetzt gilt für jedes nicht gesperrte
+Konto automatisch der Entwicklermodus (früher `--test`); der Watchdog ohne
+SYSTEM beendet sich, wenn das Konto nicht gesperrt ist. `--kindmodus` schaltet
+das echte Verhalten zum Testen ein. Für gesperrte Konten ändert sich nichts,
+deshalb ist kein Release nötig. Geprüft auf diesem PC: UI ohne Argumente →
+Entwicklermodus, kein Watchdog; Watchdog direkt gestartet → beendet sich mit
+Log-Eintrag. 140 Tests grün.
+
+### Lernplan, Karteikasten, Pflege-Oberfläche (1.4.0, 2026-11-02)
 
 Anlass: Mit wachsendem Wortschatz waren Themen (CSV) und Zeiträume
 (config.json) getrennt zu pflegen und unflexibel. Die frühere Entscheidung
@@ -59,15 +82,14 @@ Authorization) gegen das echte Repo geprüft.
 Test-Commit gemacht) und die Berichte-Seite mit Token. Erster echter
 Speicher-Vorgang: danach den Commit auf GitHub ansehen.
 
-Offen, in dieser Reihenfolge:
-1. Committen, pushen (CI baut jetzt auch die Oberfläche).
-2. Repo → Settings → Pages → Source „GitHub Actions“, dann die Action
-   „Pflege-Oberfläche“ laufen lassen (oder nächster Push).
-3. Fine-grained Token für die Oberfläche anlegen (Contents RW, nur dieses
-   Repo), einloggen, eine kleine Änderung speichern.
-4. Version 1.4.0 taggen und veröffentlichen (Directory.Build.props steht schon
-   auf 1.4.0).
-5. Lern-App 1.4.0 auf echtem Bildschirm ansehen (Kopfzeile mit Titel/mehreren
+Erledigt am 2026-11-02: gepusht, Pages eingeschaltet, Release v1.4.0
+veröffentlicht, Seite live (Klicktest im Demo-Modus gegen die echte Seite grün).
+
+Offen:
+1. Fine-grained Token für die Oberfläche anlegen (Contents RW, nur dieses
+   Repo), einloggen, eine kleine Änderung speichern – erster echter Test des
+   Speicherns.
+2. Lern-App 1.4.0 auf echtem Bildschirm ansehen (Kopfzeile mit Titel/mehreren
    Themen, 🎯 bei Grammatik/Verben, Fußzeile „… erst später laut Lernplan“).
 
 ### Thema der Woche (für 1.3.0, 2026-10-30, noch nicht veröffentlicht)
