@@ -4,7 +4,15 @@ namespace EnglishSteamTrainer.Core;
 
 /// <param name="Language">"--language es": Sprache unabhängig von der Zuordnung.</param>
 /// <param name="Only">"--only verbs|grammar|vocab": nur diese Art von Aufgaben.</param>
-public sealed record TestOptions(LearningLanguage? Language, string? Only);
+/// <param name="Account">"--als tiago": wie dieses Kind aus config.json lernen (Sprache, Lernplan, Anzahl).</param>
+public sealed record TestOptions(LearningLanguage? Language, string? Only, string? Account = null);
+
+/// <summary>Ein Kind aus config.json, als das der Entwicklermodus lernen kann.</summary>
+/// <param name="Computer">PC aus dem Eintrag, damit PC-spezifische Werte (z. B. Anzahl) greifen.</param>
+public sealed record SimulatedLearner(string Account, string Computer, LearningLanguage Language)
+{
+    public string Label => $"{Account} {Language.Flag} {Language.Name}";
+}
 
 /// <summary>
 /// Entwicklermodus (früher "--test"): gilt automatisch für jedes Konto, das nicht gesperrt
@@ -51,9 +59,37 @@ public static class TestMode
     {
         var language = Languages.Find(ValueAfter(args, "--language"));
         var only = ValueAfter(args, "--only")?.Trim().ToLowerInvariant();
+        var account = ValueAfter(args, "--als")?.Trim();
 
-        return new TestOptions(language, only is not null && OnlyKinds.Contains(only) ? only : null);
+        return new TestOptions(
+            language,
+            only is not null && OnlyKinds.Contains(only) ? only : null,
+            string.IsNullOrEmpty(account) ? null : account);
     }
+
+    /// <summary>Kinder aus config.json (users), je Konto einmal.</summary>
+    public static List<SimulatedLearner> Learners(TrainerConfig config, string fallbackComputer) =>
+        config.Users
+            .GroupBy(user => user.Account.Trim(), StringComparer.OrdinalIgnoreCase)
+            .Select(group =>
+            {
+                var computer = group
+                    .Select(user => user.Computer?.Trim())
+                    .FirstOrDefault(c => !string.IsNullOrEmpty(c) && c != "*") ?? fallbackComputer;
+
+                return new SimulatedLearner(
+                    group.Key,
+                    computer,
+                    config.FindLanguage(computer, group.Key) ?? Languages.English);
+            })
+            .OrderBy(learner => learner.Account, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    public static SimulatedLearner? FindLearner(TrainerConfig config, string? account, string fallbackComputer) =>
+        account is null
+            ? null
+            : Learners(config, fallbackComputer).FirstOrDefault(learner =>
+                string.Equals(learner.Account, account, StringComparison.OrdinalIgnoreCase));
 
     internal static string? ValueAfter(string[] args, string name)
     {

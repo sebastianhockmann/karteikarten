@@ -18,6 +18,15 @@ Zuletzt veröffentlicht: **v1.4.0** (2026-11-02).
 - Oberfläche: Verben-Seite mit Themenfilter und Mehrfachauswahl („Thema
   hinzufügen/entfernen“), Lernplan-Palette weist auf Verben ohne Thema hin.
 
+### Entwicklermodus: „Lernen als“ (für 1.4.1, 2026-11-02)
+
+Auswahl im Kopf (nur Entwicklermodus) bzw. `--als <konto>`: Konto und PC des
+Kindes aus `config.json` gelten für Lernplan und `RequiredCorrectAnswersFor`
+(PC aus dem Eintrag, damit z. B. leand/Groot 30 bekommt). Ein Wechsel öffnet
+ein neues `MainWindow` mit neuem Wegwerf-Journal (`App.SwitchLearner`). Geprüft
+per UI Automation: tiago → Englisch, „Unregelmäßige Verben“, 15; Wechsel auf
+leand → Spanisch, „Party-Essen“. 143 Tests grün.
+
 ### Entwicklermodus (für 1.4.1, 2026-11-02)
 
 Anlass: Auf dem Entwickler-PC (ohne Installation) startete die UI im

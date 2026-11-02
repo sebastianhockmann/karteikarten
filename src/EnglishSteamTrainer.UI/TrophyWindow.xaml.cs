@@ -7,11 +7,11 @@ public partial class TrophyWindow : Window
 {
     private readonly int _required;
 
-    public TrophyWindow(TrainerConfig config)
+    public TrophyWindow(TrainerConfig config, int required)
     {
         InitializeComponent();
 
-        _required = config.RequiredCorrectAnswersFor(System.Environment.MachineName, System.Environment.UserName);
+        _required = required;
         GoalText.Text = $"Du hast {_required} richtige Antworten geschafft.";
         UnlockedText.Text = $"{config.BlockedAppsText} sind jetzt freigeschaltet! 🚀";
         AppsList.ItemsSource = BlockedAppView.From(config.BlockedApps);

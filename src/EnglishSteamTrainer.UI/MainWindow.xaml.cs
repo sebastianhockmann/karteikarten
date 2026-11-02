@@ -25,6 +25,10 @@ public partial class MainWindow : Window
     private readonly LoadedContent<List<VerbForms>> _verbForms;
     private readonly LoadedContent<LearningPlan> _plan;
     private readonly TestOptions? _test;
+
+    // Konto und PC für Lernplan und Anzahl - im Entwicklermodus ggf. das gewählte Kind.
+    private readonly string _account;
+    private readonly string _computer;
     private readonly Random _random = new();
 
     private readonly Queue<QuizItem> _quizQueue = new();
@@ -38,11 +42,19 @@ public partial class MainWindow : Window
 
     /// <param name="test">Gesetzt = Entwicklermodus (siehe <see cref="TestMode"/>).</param>
     /// <param name="simulatedChild">"--kindmodus" eines nicht gesperrten Kontos: echtes Verhalten zum Testen.</param>
-    public MainWindow(AssignedLanguage assignedLanguage, AnswerJournal journal, TestOptions? test = null, bool simulatedChild = false)
+    /// <param name="learner">Entwicklermodus: lernen wie dieses Kind (Lernplan, Anzahl).</param>
+    public MainWindow(
+        AssignedLanguage assignedLanguage,
+        AnswerJournal journal,
+        TestOptions? test = null,
+        bool simulatedChild = false,
+        SimulatedLearner? learner = null)
     {
         InitializeComponent();
 
         _test = test;
+        _account = learner?.Account ?? Environment.UserName;
+        _computer = learner?.Computer ?? Environment.MachineName;
 
         if (_test is null)
             StartWatchdog(simulatedChild);
@@ -84,7 +96,7 @@ public partial class MainWindow : Window
     }
 
     private int RequiredCorrectAnswers =>
-        _config.Value.RequiredCorrectAnswersFor(Environment.MachineName, Environment.UserName);
+        _config.Value.RequiredCorrectAnswersFor(_computer, _account);
     private string BlockedAppsText => _config.Value.BlockedAppsText;
 
     private PlanEntry? FocusEntry => _session?.Focus;
@@ -107,6 +119,8 @@ public partial class MainWindow : Window
             SubtitleText.Text =
                 "Dieses Konto ist nicht gesperrt: kein Watchdog, Fenster lässt sich schließen, Antworten werden nicht gespeichert." +
                 (_test.Only is null ? "" : $" Nur Aufgaben: {_test.Only}.");
+
+            ShowLearnerChoice();
         }
 
         if (FocusEntry is not null)
@@ -129,8 +143,32 @@ public partial class MainWindow : Window
         };
 
         VersionText.Text =
-            $"Version {AppVersion.Current} · {Environment.MachineName}\\{Environment.UserName}: {_language.Name} ({_assignedLanguage.SourceText}) · {_vocabCards.Value.Count} Vokabeln, " +
+            $"Version {AppVersion.Current} · {_computer}\\{_account}: {_language.Name} ({_assignedLanguage.SourceText}) · {_vocabCards.Value.Count} Vokabeln, " +
             $"{_tenseQuestions.Value.Count} Grammatik-Fragen{VerbFormsCountText}{FocusTopicText} · Inhalte: {contentText}";
+    }
+
+    // Entwicklermodus: als eines der Kinder aus config.json lernen, um dessen Lernplan zu prüfen.
+    private void ShowLearnerChoice()
+    {
+        var choices = new List<LearnerChoice> { new(null, $"Eigenes Konto ({Environment.UserName})") };
+        choices.AddRange(TestMode.Learners(_config.Value, Environment.MachineName)
+            .Select(learner => new LearnerChoice(learner.Account, learner.Label)));
+
+        LearnerBox.ItemsSource = choices;
+        LearnerBox.SelectedItem = choices.FirstOrDefault(choice =>
+            string.Equals(choice.Account, _test?.Account, StringComparison.OrdinalIgnoreCase));
+        LearnerPanel.Visibility = Visibility.Visible;
+    }
+
+    private void LearnerBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_test is null || !IsLoaded || LearnerBox.SelectedItem is not LearnerChoice choice)
+            return;
+
+        if (string.Equals(choice.Account, _test.Account, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        ((App)Application.Current).SwitchLearner(_test, choice.Account);
     }
 
     private string FocusTopicText =>
@@ -150,7 +188,7 @@ public partial class MainWindow : Window
         _session = QuizPlanner.Build(
             new QuizRequest(
                 _language,
-                Environment.UserName,
+                _account,
                 DateOnly.FromDateTime(DateTime.Now),
                 new QuizContent(_vocabCards.Value, _tenseQuestions.Value, _verbForms.Value),
                 _config.Value,
@@ -568,7 +606,7 @@ public partial class MainWindow : Window
             RewardText.Text =
                 $"🏆 Herzlichen Glückwunsch! Du hast {RequiredCorrectAnswers} richtige Antworten geschafft. {BlockedAppsText} sind jetzt freigeschaltet!";
 
-            var trophyWindow = new TrophyWindow(_config.Value)
+            var trophyWindow = new TrophyWindow(_config.Value, RequiredCorrectAnswers)
             {
                 Owner = this
             };
@@ -662,7 +700,7 @@ public partial class MainWindow : Window
 
     private void History_Click(object sender, RoutedEventArgs e)
     {
-        new HistoryWindow(_journal, _config.Value)
+        new HistoryWindow(_journal, RequiredCorrectAnswers)
         {
             Owner = this
         }.ShowDialog();
@@ -799,3 +837,6 @@ public partial class MainWindow : Window
         }
     }
 }
+
+/// <summary>Eintrag in der Auswahl "Lernen als" (Account null = eigenes Konto).</summary>
+public sealed record LearnerChoice(string? Account, string Label);

@@ -294,6 +294,10 @@ dotnet run --project src/EnglishSteamTrainer.UI -- --only verbs --language es
 - Das Fenster lässt sich jederzeit schließen. Antworten landen in einem
   Wegwerf-Journal (wird beim Beenden gelöscht), Punkte, Verlauf und
   Tagesfortschritt bleiben unverändert, nichts wird freigeschaltet.
+- **„Lernen als“** (Auswahl oben rechts): lernt wie eines der Kinder aus
+  `config.json` (`users`) – mit dessen Sprache, Lernplan/Thema der Woche und
+  Anzahl Aufgaben. Jeder Wechsel startet mit einem frischen Wegwerf-Journal.
+  Gleich beim Start: `--als tiago`.
 - `--language es`: andere Sprache. `--only vocab|grammar|verbs`: nur eine Art
   von Aufgaben. `--test` ist weiterhin erlaubt, aber nicht mehr nötig.
 - **`--kindmodus`**: echtes Verhalten für das eigene Konto, z. B. um die Sperre

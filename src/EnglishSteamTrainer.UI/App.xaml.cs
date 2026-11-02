@@ -58,16 +58,42 @@ public partial class App : Application
     // noch den Verlauf verändern. Wird beim Beenden gelöscht.
     private void StartTestMode(TestOptions options)
     {
+        DeleteTestJournal();
         _testJournalFile = Path.Combine(Path.GetTempPath(), $"EnglishSteamTrainer-test-{Guid.NewGuid():N}.journal.txt");
         var journal = AnswerJournal.Load(DailyUnlock.CurrentUser, _testJournalFile);
 
-        var language = options.Language is null
-            ? GetLanguage([])
-            : new AssignedLanguage(options.Language, LanguageSource.Default);
+        // "--als tiago": Sprache, Lernplan und Anzahl wie bei diesem Kind. "--language" geht vor.
+        var learner = TestMode.FindLearner(ContentStore.LoadConfig().Value, options.Account, Environment.MachineName);
 
-        var window = new MainWindow(language, journal, options);
+        var language = options.Language is not null
+            ? new AssignedLanguage(options.Language, LanguageSource.Default)
+            : learner is not null
+                ? new AssignedLanguage(learner.Language, LanguageSource.Central)
+                : GetLanguage([]);
+
+        var previous = MainWindow;
+        var window = new MainWindow(language, journal, options with { Account = learner?.Account }, learner: learner);
         MainWindow = window;
         window.Show();
+        previous?.Close();
+    }
+
+    /// <summary>Entwicklermodus: neu starten als anderes Kind (null = eigenes Konto), mit frischem Journal.</summary>
+    public void SwitchLearner(TestOptions current, string? account)
+    {
+        StartTestMode(current with { Account = account, Language = null });
+    }
+
+    private void DeleteTestJournal()
+    {
+        try
+        {
+            if (_testJournalFile is not null)
+                File.Delete(_testJournalFile);
+        }
+        catch
+        {
+        }
     }
 
     // Sprache: zentral aus content/config.json, sonst aus der Installation (settings.json) -
@@ -101,15 +127,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         _singleInstance?.Dispose();
-
-        try
-        {
-            if (_testJournalFile is not null)
-                File.Delete(_testJournalFile);
-        }
-        catch
-        {
-        }
+        DeleteTestJournal();
 
         base.OnExit(e);
     }

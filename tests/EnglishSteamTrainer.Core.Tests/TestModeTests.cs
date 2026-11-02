@@ -50,6 +50,30 @@ public class TestModeTests
     }
 
     [Fact]
+    public void Learners_come_from_config_with_their_computer_and_language()
+    {
+        var config = TrainerConfig.TryParse("""
+            {
+              "blockedApps": [ { "name": "Steam", "executables": [ "steam.exe" ] } ],
+              "users": [
+                { "computer": "DESKTOP-NO7VIKD", "account": "tiago", "language": "en", "requiredCorrectAnswers": 15 },
+                { "computer": "Groot", "account": "leand", "language": "es", "requiredCorrectAnswers": 30 },
+                { "computer": "*", "account": "Leand", "requiredCorrectAnswers": 20 }
+              ]
+            }
+            """)!;
+
+        var learners = TestMode.Learners(config, "DEV-PC");
+
+        Assert.Equal(["leand", "tiago"], learners.Select(learner => learner.Account));
+        Assert.Equal(new SimulatedLearner("leand", "Groot", Languages.Spanish), learners[0]);
+        Assert.Equal(30, config.RequiredCorrectAnswersFor(learners[0].Computer, learners[0].Account));
+        Assert.Equal(new SimulatedLearner("tiago", "DESKTOP-NO7VIKD", Languages.English), TestMode.FindLearner(config, "TIAGO", "DEV-PC"));
+        Assert.Null(TestMode.FindLearner(config, "unbekannt", "DEV-PC"));
+        Assert.Equal("tiago", TestMode.Parse(["--als", "tiago"]).Account);
+    }
+
+    [Fact]
     public void Unknown_only_value_means_all_kinds()
     {
         var options = TestMode.Parse(["--test", "--only", "alles"]);

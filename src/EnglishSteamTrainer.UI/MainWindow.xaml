@@ -32,6 +32,18 @@
                             Margin="0,8,0,0"
                             HorizontalAlignment="Right"
                             Click="History_Click"/>
+                    <StackPanel x:Name="LearnerPanel"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Margin="0,8,0,0"
+                                Visibility="Collapsed">
+                        <TextBlock Text="🛠 Lernen als:" Foreground="#FFE082" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <ComboBox x:Name="LearnerBox"
+                                  MinWidth="170"
+                                  FontSize="13"
+                                  DisplayMemberPath="Label"
+                                  SelectionChanged="LearnerBox_SelectionChanged"/>
+                    </StackPanel>
                 </StackPanel>
 
                 <StackPanel>
