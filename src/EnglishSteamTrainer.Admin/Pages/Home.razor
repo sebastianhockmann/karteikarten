@@ -1,0 +1,223 @@
+@page "/"
+@inherits ContentPage
+@inject AdminSettings Settings
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
+<PageTitle>Übersicht – Karteikarten</PageTitle>
+
+<h1>Übersicht</h1>
+
+@if (State.Connecting)
+{
+    <p class="muted">Verbinde mit GitHub und lade die Inhalte …</p>
+}
+else if (!State.IsLoaded)
+{
+    <div class="panel" style="max-width: 46rem">
+        <h2 style="margin-top:0">Mit GitHub verbinden</h2>
+        <p>
+            Die Oberfläche liest und speichert die Dateien in <code>content/</code> direkt im Repo. Dafür braucht sie
+            ein <b>Fine-grained Personal Access Token</b>:
+        </p>
+        <ol class="small">
+            <li><a href="https://github.com/settings/personal-access-tokens/new" target="_blank">Neues Token anlegen</a> (Ablaufdatum nach Wunsch).</li>
+            <li><i>Repository access:</i> „Only select repositories“ → <code>karteikarten</code>.</li>
+            <li><i>Permissions → Repository permissions → Contents:</i> „Read and write“.</li>
+            <li>Token hier einfügen. Es bleibt nur in diesem Browser gespeichert (localStorage).</li>
+        </ol>
+
+        <div class="grid2">
+            <label class="field"><span>Repository</span><input @bind="Settings.Repository" /></label>
+            <label class="field"><span>Token</span><input type="password" @bind="Settings.Token" placeholder="github_pat_…" /></label>
+        </div>
+        <div class="row" style="margin-top:0.75rem">
+            <button class="primary" disabled="@_busy" @onclick="Connect">@(_busy ? "Verbinde …" : "Verbinden")</button>
+            <button disabled="@_busy" @onclick="Demo" title="Stand der letzten Veröffentlichung, Speichern nicht möglich">Ohne Anmeldung ansehen (Demo)</button>
+        </div>
+
+        @if (State.ConnectError is not null)
+        {
+            <div class="notice error" style="margin-top:0.75rem">@State.ConnectError</div>
+        }
+    </div>
+}
+else
+{
+    var learners = Learner.From(Set.Config);
+    var today = Dates.Today;
+    var problems = State.Problems();
+
+    @if (State.IsDemo)
+    {
+        <div class="notice info">
+            <b>Demo-Modus:</b> Inhalte zum Stand der letzten Veröffentlichung dieser Seite. Alles lässt sich ausprobieren, Speichern ist gesperrt.
+            <button class="link" @onclick="Logout">Zur Anmeldung</button>
+        </div>
+    }
+    else
+    {
+    <div class="row small muted" style="margin-bottom:1rem">
+        <span>Angemeldet als <b>@State.User</b> · @State.GitHub.Repository · Stand <code>@State.HeadSha?[..7]</code>, geladen um @State.LoadedAt?.ToString("HH:mm")</span>
+        <button class="link" @onclick="Reload">Neu laden</button>
+        <button class="link" @onclick="Logout">Abmelden</button>
+    </div>
+    }
+
+    @if (_error is not null)
+    {
+        <div class="notice error">@_error</div>
+    }
+
+    @if (State.LoadProblems.Count > 0)
+    {
+        <h2>Beim Laden aufgefallen</h2>
+        <ProblemList Problems="State.LoadProblems" />
+    }
+
+    @if (problems.Count > 0)
+    {
+        <h2>Prüfung</h2>
+        <ProblemList Problems="problems" Max="50" />
+    }
+    else
+    {
+        <div class="notice ok">✔ Alle Inhalte sind gültig.</div>
+    }
+
+    <h2>Was ist gerade dran?</h2>
+    <table class="data">
+        <thead><tr><th>Kind</th><th>Heute</th><th>Danach</th><th class="num">Zurückgehalten</th></tr></thead>
+        <tbody>
+            @foreach (var learner in learners)
+            {
+                var language = learner.Language ?? Languages.English;
+                var plan = Set.Plan.WithLegacyFocusTopics(Set.Config.FocusTopics).For(language, learner.Account);
+                var current = plan.ActiveEntry(today);
+                var next = plan.Entries.Where(e => e.From > today).OrderBy(e => e.From).FirstOrDefault();
+                var content = Set[language];
+                var heldBack = content.Vocabulary.Count(c => plan.IsHeldBack(c.Topics, today))
+                               + content.Grammar.Count(q => plan.IsHeldBack([q.Hint], today))
+                               + content.Verbs.Count(v => plan.IsHeldBack(v.Topics, today));
+
+                <tr>
+                    <td>
+                        <b>@learner.Label</b>
+                        @if (learner.Language is null)
+                        {
+                            <span class="muted small"> (Sprache vom PC)</span>
+                        }
+                    </td>
+                    <td>
+                        @if (current is null)
+                        {
+                            <span class="muted">kein Thema – alles gemischt</span>
+                        }
+                        else
+                        {
+                            <span>🎯 @current.DisplayName <span class="muted small">bis @Dates.WithDay(current.To)</span></span>
+                        }
+                    </td>
+                    <td>
+                        @if (next is null)
+                        {
+                            <span class="muted">nichts geplant</span>
+                        }
+                        else
+                        {
+                            <span>@next.DisplayName <span class="muted small">ab @Dates.WithDay(next.From)</span></span>
+                        }
+                    </td>
+                    <td class="num">@heldBack</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <p class="small muted">„Zurückgehalten“ = Aufgaben, deren Themen erst später im Lernplan stehen und deshalb noch nicht abgefragt werden.</p>
+
+    <h2>Inhalte</h2>
+    <table class="data" style="max-width: 40rem">
+        <thead><tr><th>Sprache</th><th class="num">Vokabeln</th><th class="num">Grammatik</th><th class="num">Verben</th><th class="num">Themen</th></tr></thead>
+        <tbody>
+            @foreach (var language in Languages.All)
+            {
+                var content = Set[language];
+                <tr>
+                    <td>@language.Flag @language.Name</td>
+                    <td class="num"><a href="vokabeln?sprache=@language.Code">@content.Vocabulary.Count</a></td>
+                    <td class="num"><a href="grammatik?sprache=@language.Code">@content.Grammar.Count</a></td>
+                    <td class="num">@(language.HasVerbForms ? content.Verbs.Count.ToString() : "–")</td>
+                    <td class="num"><a href="themen?sprache=@language.Code">@content.Topics.Count()</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private bool _busy;
+    private string? _error;
+
+    private async Task Connect()
+    {
+        _busy = true;
+        State.ConnectError = null;
+
+        try
+        {
+            await Settings.SaveAsync();
+            await State.ConnectAsync();
+        }
+        catch (Exception ex)
+        {
+            State.ConnectError = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task Demo()
+    {
+        _busy = true;
+        State.ConnectError = null;
+
+        try
+        {
+            await State.LoadDemoAsync(Navigation.BaseUri);
+        }
+        catch (Exception ex)
+        {
+            State.ConnectError = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task Reload()
+    {
+        _error = null;
+
+        if (State.PendingFiles().Count > 0 && !await JS.InvokeAsync<bool>("confirm", "Ungespeicherte Änderungen gehen verloren. Trotzdem neu laden?"))
+            return;
+
+        try
+        {
+            await State.LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private async Task Logout()
+    {
+        await Settings.ForgetTokenAsync();
+        await JS.InvokeVoidAsync("karteikarten.setUnsaved", false);
+        Navigation.NavigateTo("", forceLoad: true);
+    }
+}

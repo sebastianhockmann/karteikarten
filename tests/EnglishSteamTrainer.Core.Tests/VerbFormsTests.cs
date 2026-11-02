@@ -59,15 +59,15 @@ public class VerbFormsTests
     [Fact]
     public void Only_languages_with_verb_forms_sync_a_verbs_file()
     {
-        Assert.Contains("en/verbs.csv", ContentStore.AllFiles);
-        Assert.DoesNotContain("es/verbs.csv", ContentStore.AllFiles);
+        Assert.Contains("en/verbs.csv", ContentFiles.All);
+        Assert.DoesNotContain("es/verbs.csv", ContentFiles.All);
         Assert.Empty(ContentStore.LoadVerbForms(Languages.Spanish).Value);
     }
 
     [Fact]
     public void Empty_verbs_file_is_rejected()
     {
-        Assert.False(ContentStore.IsValid("en/verbs.csv", "Infinitive;SimplePast;PastParticiple;German\n"));
-        Assert.True(ContentStore.IsValid("en/verbs.csv", "Infinitive;SimplePast;PastParticiple;German\nbe;was|were;been;sein\n"));
+        Assert.False(ContentFiles.IsValid("en/verbs.csv", "Infinitive;SimplePast;PastParticiple;German\n"));
+        Assert.True(ContentFiles.IsValid("en/verbs.csv", "Infinitive;SimplePast;PastParticiple;German\nbe;was|were;been;sein\n"));
     }
 }

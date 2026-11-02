@@ -1,0 +1,109 @@
+@page "/berichte"
+@inherits ContentPage
+
+<PageTitle>Berichte – Karteikarten</PageTitle>
+
+<h1>Berichte</h1>
+
+<RequireLoaded>
+    <p class="small muted">
+        Die Fortschrittsberichte lädt der Watchdog alle 30 Minuten in den Branch <code>@AdminSettings.ReportBranch</code> hoch
+        (nur auf PCs, die mit <code>Install.ps1 -ReportToken</code> eingerichtet sind). Die Tagesgrafik zeigt GitHub selbst an.
+    </p>
+
+    @if (_error is not null)
+    {
+        <div class="notice error">@_error</div>
+    }
+
+    @if (_reports is null)
+    {
+        <p class="muted">Lädt …</p>
+    }
+    else if (_reports.Count == 0)
+    {
+        <p class="muted">Noch keine Berichte vorhanden.</p>
+    }
+    else
+    {
+        <div class="tabs">
+            @foreach (var report in _reports)
+            {
+                <button class="@(report == _current ? "active" : "")" @onclick="() => Show(report)">@report.Path.Replace(".md", "")</button>
+            }
+            <button class="link" @onclick="LoadList">Aktualisieren</button>
+        </div>
+
+        @if (_current is not null)
+        {
+            <p class="small"><a href="https://github.com/@State.GitHub.Repository/blob/@AdminSettings.ReportBranch/@_current.Path" target="_blank">Auf GitHub mit Grafik ansehen</a></p>
+            <div class="report">
+                @if (_html is null)
+                {
+                    <p class="muted">Lädt …</p>
+                }
+                else
+                {
+                    @((MarkupString)_html)
+                }
+            </div>
+        }
+    }
+</RequireLoaded>
+
+@code {
+    private List<TreeEntry>? _reports;
+    private TreeEntry? _current;
+    private string? _html;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (State.IsLoaded)
+            await LoadList();
+    }
+
+    private async Task LoadList()
+    {
+        _error = null;
+
+        try
+        {
+            var head = await State.GitHub.GetBranchHeadAsync(AdminSettings.ReportBranch);
+            var tree = await State.GitHub.GetTreeAsync(await State.GitHub.GetCommitTreeAsync(head));
+
+            _reports = tree
+                .Where(entry => entry.Type == "blob" && entry.Path.EndsWith(".md") && entry.Path.Contains('/'))
+                .OrderBy(entry => entry.Path)
+                .ToList();
+
+            if (_reports.Count > 0)
+                await Show(_reports.FirstOrDefault(r => r.Path == _current?.Path) ?? _reports[0]);
+        }
+        catch (Exception ex)
+        {
+            _reports = [];
+            _error = ex.Message;
+        }
+    }
+
+    private async Task Show(TreeEntry report)
+    {
+        _current = report;
+        _html = null;
+
+        try
+        {
+            var markdown = await State.GitHub.GetBlobTextAsync(report.Sha);
+
+            // Die Mermaid-Grafik stellt nur github.com selbst dar - hier weglassen, die Tabelle zeigt dasselbe.
+            markdown = System.Text.RegularExpressions.Regex.Replace(markdown, "```mermaid.*?```", "", System.Text.RegularExpressions.RegexOptions.Singleline);
+
+            _html = await State.GitHub.RenderMarkdownAsync(markdown);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+    }
+}

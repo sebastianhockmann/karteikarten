@@ -1,0 +1,133 @@
+@page "/vorschau"
+@inherits ContentPage
+
+<PageTitle>Vorschau – Karteikarten</PageTitle>
+
+<h1>Vorschau</h1>
+
+<RequireLoaded>
+    @{
+        var learners = Learner.From(Set.Config);
+        var learner = learners.FirstOrDefault(l => l.Account == _account);
+        var language = learner?.Language ?? Languages.Find(_languageCode) ?? Languages.English;
+        var required = Required(_account);
+        var session = Build(language);
+        var count = Math.Min(session.Items.Count, _count > 0 ? _count : required * 2);
+    }
+
+    <div class="panel row">
+        <label class="field">
+            <span>Kind</span>
+            <select @bind="_account">
+                <option value="">(ohne Kind)</option>
+                @foreach (var l in learners)
+                {
+                    <option value="@l.Account">@l.Label</option>
+                }
+            </select>
+        </label>
+        @if (learner?.Language is null)
+        {
+            <label class="field">
+                <span>Sprache</span>
+                <select @bind="_languageCode">
+                    @foreach (var l in Languages.All)
+                    {
+                        <option value="@l.Code">@l.Flag @l.Name</option>
+                    }
+                </select>
+            </label>
+        }
+        <label class="field"><span>Tag</span><input type="date" @bind="_date" /></label>
+        <label class="field"><span>Aufgaben zeigen</span><input type="number" min="0" style="width:6rem" @bind="_count" placeholder="@(required * 2)" /></label>
+        <button @onclick="() => _seed++">Neu mischen</button>
+    </div>
+
+    <div class="notice info small">
+        Der Lernverlauf liegt nur auf dem PC des Kindes – hier gelten deshalb alle Aufgaben als neu. In echt kommen zuerst die
+        zuletzt falsch beantworteten und die fälligen Wiederholungen aus dem Karteikasten, danach Neues.
+    </div>
+
+    <p>
+        @if (session.Focus is not null)
+        {
+            <span>🎯 <b>@session.Focus.DisplayName</b> (bis @Dates.WithDay(session.Focus.To)) – @session.FocusItemCount Aufgaben zum Thema, davon kommen ca. @Set.Config.FocusSharePercent % zuerst.</span>
+        }
+        else
+        {
+            <span class="muted">Kein Thema im Lernplan an diesem Tag – alle Aufgaben gemischt.</span>
+        }
+        @if (session.HeldBackCount > 0)
+        {
+            <span> · <b>@session.HeldBackCount</b> Aufgaben kommen laut Lernplan erst später.</span>
+        }
+        <span class="muted"> · Tagesziel @required richtige Antworten · @session.Items.Count Aufgaben insgesamt in der Runde.</span>
+    </p>
+
+    <ol class="preview">
+        @foreach (var item in session.Items.Take(count))
+        {
+            var focusTopic = session.FocusTopicOf(item);
+            <li>
+                @switch (item)
+                {
+                    case VocabQuizItem vocab:
+                        <span class="kind">Vokabel</span>
+                        @if (vocab.AskWordToGerman)
+                        {
+                            <b>@vocab.Card.Word</b> <span class="muted">→ @vocab.Card.German</span>
+                        }
+                        else
+                        {
+                            <b>@vocab.Card.German</b> <span class="muted">→ @vocab.Card.Word</span>
+                        }
+                        break;
+                    case TenseQuizItem tense:
+                        <span class="kind">Grammatik</span>
+                        <b>@tense.Question.Key</b> <span class="muted">→ @tense.Question.CorrectForm (Auswahl: @string.Join(", ", tense.ShuffledOptions))</span>
+                        break;
+                    case VerbFormsQuizItem verb:
+                        <span class="kind">Verb</span>
+                        <b>@verb.Verb.Display(verb.GivenForm)</b> <span class="muted">(@VerbForms.FormNames[verb.GivenForm]) → @string.Join(" – ", Enumerable.Range(0, 3).Select(verb.Verb.Display))</span>
+                        break;
+                }
+                @if (focusTopic is not null)
+                {
+                    <span class="chip focus">🎯 @focusTopic</span>
+                }
+                else
+                {
+                    @foreach (var topic in QuizPlanner.TopicsOf(item))
+                    {
+                        <span class="chip">@topic</span>
+                    }
+                }
+            </li>
+        }
+    </ol>
+</RequireLoaded>
+
+@code {
+    private string _account = "";
+    private string _languageCode = Languages.English.Code;
+    private DateOnly _date = Dates.Today;
+    private int _count;
+    private int _seed = 1;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _account = Learner.From(Set.Config).FirstOrDefault()?.Account ?? "";
+    }
+
+    private int Required(string account) =>
+        Set.Config.Users
+            .Where(u => string.Equals(u.Account, account, StringComparison.OrdinalIgnoreCase))
+            .Select(u => u.RequiredCorrectAnswers)
+            .FirstOrDefault(r => r is not null) ?? Set.Config.RequiredCorrectAnswers;
+
+    private QuizSession Build(LearningLanguage language) =>
+        QuizPlanner.Build(
+            new QuizRequest(language, _account, _date, Set[language].ToQuiz(), Set.Config, Set.Plan, []),
+            new Random(_seed));
+}

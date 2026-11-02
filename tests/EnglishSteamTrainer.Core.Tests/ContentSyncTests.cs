@@ -34,7 +34,7 @@ public sealed class ContentSyncTests : IDisposable
         var result = await Sync(path => Ok(Bundled(path)));
 
         Assert.Empty(result.Errors);
-        Assert.Equal(ContentStore.AllFiles.Count(), result.Updated.Count);
+        Assert.Equal(ContentFiles.All.Count(), result.Updated.Count);
         Assert.Equal(Bundled("es/vocabulary.csv"), File.ReadAllText(Cached("es/vocabulary.csv")));
         Assert.True(File.Exists(Path.Combine(_cacheRoot, "last-sync.txt")));
 
@@ -47,12 +47,12 @@ public sealed class ContentSyncTests : IDisposable
     {
         await Sync(path => Ok(Bundled(path)));
 
-        var result = await Sync(path => path == ContentStore.ConfigFile
+        var result = await Sync(path => path == ContentFiles.Config
             ? Ok("""{ "blockedApps": [] }""")
             : Ok(Bundled(path)));
 
         Assert.Single(result.Errors);
-        Assert.Equal(Bundled(ContentStore.ConfigFile), File.ReadAllText(Cached(ContentStore.ConfigFile)));
+        Assert.Equal(Bundled(ContentFiles.Config), File.ReadAllText(Cached(ContentFiles.Config)));
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public sealed class ContentSyncTests : IDisposable
         var result = await Sync(_ => throw new HttpRequestException("Kein Netz"));
 
         Assert.False(result.ReachedServer);
-        Assert.Equal(ContentStore.AllFiles.Count(), result.Errors.Count);
+        Assert.Equal(ContentFiles.All.Count(), result.Errors.Count);
         Assert.True(File.Exists(Cached("en/vocabulary.csv")));
     }
 

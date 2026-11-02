@@ -1,0 +1,81 @@
+@inherits ContentPage
+
+@{
+    var pending = State.PendingFiles();
+    var problems = State.Problems();
+    var errors = problems.Count(p => p.Severity == ProblemSeverity.Error);
+    var warnings = problems.Count - errors;
+}
+
+<div class="savebar">
+    @if (pending.Count == 0)
+    {
+        <span class="muted">✔ Alles gespeichert@(State.LastCommitUrl is null ? "" : " – ")</span>
+        @if (State.LastCommitUrl is not null)
+        {
+            <a href="@State.LastCommitUrl" target="_blank">Commit ansehen</a>
+            <span class="muted small">Die PCs übernehmen die Änderung innerhalb von ca. 35 Minuten (beim nächsten Start der Lern-App).</span>
+        }
+    }
+    else
+    {
+        <b>@pending.Count @(pending.Count == 1 ? "Datei" : "Dateien") geändert</b>
+        <span class="files">
+            @foreach (var file in pending)
+            {
+                <span class="nowrap">@file.Path (<span style="color:var(--accent)">+@file.Added</span>/<span style="color:var(--danger)">−@file.Removed</span>) </span>
+            }
+        </span>
+        <input type="text" @bind="_message" placeholder="Was wurde geändert? (Commit-Nachricht)" />
+        <button class="primary" disabled="@(_saving || errors > 0)" title="@(errors > 0 ? "Erst die Fehler beheben (siehe Übersicht)" : "")" @onclick="Save">
+            @(_saving ? "Speichert …" : "Auf GitHub speichern")
+        </button>
+        <button disabled="@_saving" @onclick="Discard">Verwerfen</button>
+    }
+
+    @if (errors > 0)
+    {
+        <a href="" title="Details auf der Übersicht"><span class="badge error">@errors</span> Fehler</a>
+    }
+    @if (warnings > 0)
+    {
+        <a href="" title="Details auf der Übersicht"><span class="badge warn">@warnings</span> Hinweise</a>
+    }
+    @if (_error is not null)
+    {
+        <span style="color:var(--danger)">@_error</span>
+    }
+</div>
+
+@code {
+    private string _message = "";
+    private bool _saving;
+    private string? _error;
+
+    private async Task Save()
+    {
+        _saving = true;
+        _error = null;
+
+        try
+        {
+            var message = string.IsNullOrWhiteSpace(_message) ? "Inhalte aktualisiert (Pflege-Oberfläche)" : _message.Trim();
+            await State.SaveAsync(message);
+            _message = "";
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void Discard()
+    {
+        _error = null;
+        State.Discard();
+    }
+}

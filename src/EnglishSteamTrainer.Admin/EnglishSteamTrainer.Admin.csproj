@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <!--
+    Pflege-Oberfläche für content/ (Vokabeln, Themen, Lernplan) im Browser. Läuft als
+    statische Seite auf GitHub Pages und speichert direkt per Commit ins Repo
+    (.github/workflows/admin.yml). Inhalte werden mit denselben Klassen gelesen,
+    geschrieben und geprüft wie in der Lern-App (EnglishSteamTrainer.Content).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.14" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.14" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EnglishSteamTrainer.Content\EnglishSteamTrainer.Content.csproj" />
+    <!-- config.json und plan.json werden per Reflection (System.Text.Json) gelesen - nichts davon wegtrimmen. -->
+    <TrimmerRootAssembly Include="EnglishSteamTrainer.Content" />
+  </ItemGroup>
+
+  <!--
+    Demo-Modus ("Ohne Anmeldung ansehen"): der Stand von content/ wird mit veröffentlicht und
+    lässt sich ohne Token ansehen, Speichern ist dann gesperrt. Kopie, nicht im Repo (.gitignore).
+  -->
+  <Target Name="CopyDemoContent" BeforeTargets="BeforeBuild">
+    <ItemGroup>
+      <DemoContent Include="..\..\content\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(DemoContent)" DestinationFiles="@(DemoContent->'wwwroot\demo-content\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

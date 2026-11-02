@@ -1,0 +1,437 @@
+@page "/vokabeln"
+@inherits ContentPage
+@inject IJSRuntime JS
+
+<PageTitle>Vokabeln – Karteikarten</PageTitle>
+
+<h1>Vokabeln</h1>
+
+<RequireLoaded>
+    @{
+        var content = Set[_language];
+        var topics = content.Topics.Order(StringComparer.OrdinalIgnoreCase).ToList();
+        var rows = Filtered(content.Vocabulary).ToList();
+    }
+
+    <LanguageTabs Value="_language" ValueChanged="SwitchLanguage" />
+
+    @if (_editing is not null)
+    {
+        <div class="panel">
+            <h2 style="margin-top:0">@(_editingOriginal is null ? "Neues Wort" : $"„{_editingOriginal.Word}“ bearbeiten")</h2>
+            <div class="grid2">
+                <label class="field"><span>@_language.Name</span><input @bind="_editing.Word" @bind:event="oninput" /></label>
+                <label class="field"><span>Deutsch</span><input @bind="_editing.German" @bind:event="oninput" /></label>
+                <label class="field"><span>Tipp (optional)</span><input @bind="_editing.Hint" /></label>
+                <label class="field"><span>Themen</span><ChipInput @bind-Values="_editing.Topics" Suggestions="topics" ChipClass="topic" Placeholder="Thema …" /></label>
+                <label class="field"><span>Weitere richtige Antworten auf Deutsch</span><ChipInput @bind-Values="_editing.GermanAlternatives" Placeholder="z. B. Kaninchen" /></label>
+                <label class="field"><span>Weitere richtige Antworten auf @_language.Name</span><ChipInput @bind-Values="_editing.WordAlternatives" /></label>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_editing.Id))
+            {
+                <p class="small muted">Umbenannt: Der Lernverlauf läuft weiter unter „@_editing.Id“.</p>
+            }
+
+            @{ var errors = Validate(content); }
+            @if (errors.Count > 0)
+            {
+                <div class="notice error" style="margin-top:0.75rem">@string.Join(" ", errors)</div>
+            }
+
+            <div class="row" style="margin-top:0.75rem">
+                <button class="primary" disabled="@(errors.Count > 0)" @onclick="Apply">Übernehmen</button>
+                @if (_editingOriginal is null)
+                {
+                    <button disabled="@(errors.Count > 0)" @onclick="ApplyAndNew">Übernehmen + nächstes</button>
+                }
+                <button @onclick="() => _editing = null">Abbrechen</button>
+                @if (_editingOriginal is not null)
+                {
+                    <span class="grow"></span>
+                    <button class="danger" @onclick="DeleteEditing">Löschen</button>
+                }
+            </div>
+        </div>
+    }
+
+    @if (_importing)
+    {
+        <div class="panel">
+            <h2 style="margin-top:0">Liste einfügen</h2>
+            <p class="small muted">
+                Eine Vokabel pro Zeile: <code>@_language.Name;Deutsch</code>, optional <code>;Tipp</code>. Statt <code>;</code> geht auch
+                ein Tabulator (aus Excel kopiert) oder <code> = </code>. Mehrere richtige Antworten mit <code>/</code> trennen
+                (die erste wird abgefragt, z. B. <code>rabbit;Hase/Kaninchen</code>).
+            </p>
+            <textarea @bind="_importText" @bind:event="oninput" placeholder="perro;Hund&#10;gato;Katze;Miaut"></textarea>
+            <div class="grid2" style="margin-top:0.5rem">
+                <label class="field"><span>Themen für alle eingefügten Wörter</span><ChipInput @bind-Values="_importTopics" Suggestions="topics" ChipClass="topic" Placeholder="Thema …" /></label>
+            </div>
+
+            @{ var import = ParseImport(content); }
+            <p class="small" style="margin-top:0.5rem">
+                <b>@import.New.Count neu</b>
+                @if (import.Existing.Count > 0)
+                {
+                    <span> · @import.Existing.Count schon vorhanden (bekommen nur die Themen dazu): @string.Join(", ", import.Existing.Select(c => c.Word))</span>
+                }
+                @if (import.Invalid.Count > 0)
+                {
+                    <span style="color:var(--danger)"> · @import.Invalid.Count Zeilen unlesbar: @string.Join(" | ", import.Invalid)</span>
+                }
+            </p>
+            <div class="row">
+                <button class="primary" disabled="@(import.New.Count + import.Existing.Count == 0)" @onclick="() => Import(import)">Einfügen</button>
+                <button @onclick="() => _importing = false">Abbrechen</button>
+            </div>
+        </div>
+    }
+
+    <div class="row" style="margin-bottom:0.75rem">
+        <input type="search" placeholder="Suchen …" @bind="_search" @bind:event="oninput" style="min-width:14rem" />
+        <select @bind="_topicFilter">
+            <option value="">Alle Themen</option>
+            <option value="@NoTopic">(ohne Thema)</option>
+            @foreach (var topic in topics)
+            {
+                <option value="@topic">@topic (@content.Vocabulary.Count(c => c.HasTopic(topic)))</option>
+            }
+        </select>
+        <span class="muted small">@rows.Count von @content.Vocabulary.Count</span>
+        <span class="grow"></span>
+        <button class="primary" @onclick="New">+ Neues Wort</button>
+        <button @onclick="() => { _importing = true; _editing = null; }">Liste einfügen</button>
+    </div>
+
+    @if (_selected.Count > 0)
+    {
+        <div class="panel row">
+            <b>@_selected.Count ausgewählt:</b>
+            <input list="bulk-topics" placeholder="Thema" @bind="_bulkTopic" @bind:event="oninput" />
+            <datalist id="bulk-topics">
+                @foreach (var topic in topics)
+                {
+                    <option value="@topic"></option>
+                }
+            </datalist>
+            <button disabled="@string.IsNullOrWhiteSpace(_bulkTopic)" @onclick="() => BulkTopic(add: true)">Thema hinzufügen</button>
+            <button disabled="@string.IsNullOrWhiteSpace(_bulkTopic)" @onclick="() => BulkTopic(add: false)">Thema entfernen</button>
+            <span class="grow"></span>
+            <button class="danger" @onclick="BulkDelete">Löschen</button>
+            <button class="link" @onclick="() => _selected.Clear()">Auswahl aufheben</button>
+        </div>
+    }
+
+    <table class="data">
+        <thead>
+            <tr>
+                <th style="width:2rem"><input type="checkbox" checked="@(rows.Count > 0 && rows.All(_selected.Contains))" @onchange="e => SelectAll(rows, (bool)e.Value!)" /></th>
+                <th>@_language.Name</th>
+                <th>Deutsch</th>
+                <th>Tipp</th>
+                <th>Themen</th>
+                <th>Weitere Antworten</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var card in rows)
+            {
+                <tr class="clickable @(_selected.Contains(card) ? "selected" : "")">
+                    <td @onclick:stopPropagation="true"><input type="checkbox" checked="@_selected.Contains(card)" @onchange="e => Toggle(card, (bool)e.Value!)" /></td>
+                    <td @onclick="() => Edit(card)"><b>@card.Word</b></td>
+                    <td @onclick="() => Edit(card)">@card.German</td>
+                    <td @onclick="() => Edit(card)" class="muted small">@card.Hint</td>
+                    <td @onclick="() => Edit(card)">
+                        @foreach (var topic in card.Topics ?? [])
+                        {
+                            <span class="chip topic">@topic</span>
+                        }
+                    </td>
+                    <td @onclick="() => Edit(card)" class="small">
+                        @string.Join(", ", card.GermanAlternatives.Concat(card.WordAlternatives))
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</RequireLoaded>
+
+@code {
+    private const string NoTopic = "__ohne__";
+
+    private LearningLanguage _language = Languages.English;
+    private string _search = "";
+    private string _topicFilter = "";
+    private string _bulkTopic = "";
+    private readonly HashSet<VocabularyCard> _selected = new(ReferenceEqualityComparer.Instance);
+
+    private VocabDraft? _editing;
+    private VocabularyCard? _editingOriginal;
+
+    private bool _importing;
+    private string _importText = "";
+    private List<string> _importTopics = [];
+
+    [SupplyParameterFromQuery(Name = "sprache")] public string? LanguageCode { get; set; }
+    [SupplyParameterFromQuery(Name = "thema")] public string? Topic { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _language = Languages.Find(LanguageCode) ?? _language;
+        _topicFilter = Topic ?? _topicFilter;
+    }
+
+    private void SwitchLanguage(LearningLanguage language)
+    {
+        _language = language;
+        _topicFilter = "";
+        _selected.Clear();
+        _editing = null;
+        _importing = false;
+    }
+
+    private IEnumerable<VocabularyCard> Filtered(IEnumerable<VocabularyCard> cards)
+    {
+        var search = _search.Trim();
+
+        return cards.Where(card =>
+            (_topicFilter == "" || (_topicFilter == NoTopic ? card.Topics is not { Count: > 0 } : card.HasTopic(_topicFilter)))
+            && (search.Length == 0
+                || card.Word.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || card.German.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || card.Hint.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || card.GermanAlternatives.Concat(card.WordAlternatives).Any(a => a.Contains(search, StringComparison.OrdinalIgnoreCase))));
+    }
+
+    private void New()
+    {
+        _importing = false;
+        _editingOriginal = null;
+        _editing = new VocabDraft
+        {
+            // Beim Filtern nach einem Thema bekommt das neue Wort das Thema gleich mit.
+            Topics = _topicFilter is "" or NoTopic ? [] : [_topicFilter]
+        };
+    }
+
+    private void Edit(VocabularyCard card)
+    {
+        _importing = false;
+        _editingOriginal = card;
+        _editing = VocabDraft.From(card);
+    }
+
+    private List<string> Validate(LanguageContent content)
+    {
+        var errors = new List<string>();
+        var draft = _editing!;
+        var forbidden = new[] { ';', '|' };
+
+        if (string.IsNullOrWhiteSpace(draft.Word)) errors.Add($"{_language.Name} fehlt.");
+        if (string.IsNullOrWhiteSpace(draft.German)) errors.Add("Deutsch fehlt.");
+
+        var values = new[] { draft.Word, draft.German, draft.Hint }
+            .Concat(draft.Topics).Concat(draft.GermanAlternatives).Concat(draft.WordAlternatives);
+
+        if (values.Any(v => v.IndexOfAny(forbidden) >= 0)) errors.Add("; und | sind nicht erlaubt.");
+        if (draft.Word.TrimStart().StartsWith('#')) errors.Add("Ein Wort darf nicht mit # beginnen.");
+
+        var key = KeyAfterApply(draft);
+
+        if (content.Vocabulary.Any(card => !ReferenceEquals(card, _editingOriginal)
+                                           && (string.Equals(card.Key, key, StringComparison.OrdinalIgnoreCase)
+                                               || string.Equals(card.Word, draft.Word.Trim(), StringComparison.OrdinalIgnoreCase))))
+            errors.Add($"„{draft.Word.Trim()}“ gibt es schon.");
+
+        return errors;
+    }
+
+    // Wird ein gespeichertes Wort umbenannt, bleibt der alte Text als Id - sonst wäre der Lernverlauf weg.
+    private string? IdAfterApply(VocabDraft draft)
+    {
+        var word = draft.Word.Trim();
+        var id = draft.Id;
+
+        if (string.IsNullOrWhiteSpace(id)
+            && _editingOriginal is not null
+            && !string.Equals(_editingOriginal.Word, word, StringComparison.OrdinalIgnoreCase)
+            && State.IsSavedWord(_language, _editingOriginal.Word))
+            id = _editingOriginal.Word;
+
+        return string.Equals(id, word, StringComparison.OrdinalIgnoreCase) ? null : id;
+    }
+
+    private string KeyAfterApply(VocabDraft draft) => IdAfterApply(draft) is { Length: > 0 } id ? id : draft.Word.Trim();
+
+    private void Apply()
+    {
+        var list = Set[_language].Vocabulary;
+        var card = _editing!.ToCard() with { Id = IdAfterApply(_editing) };
+
+        if (_editingOriginal is null)
+        {
+            list.Add(card);
+        }
+        else
+        {
+            var index = list.FindIndex(c => ReferenceEquals(c, _editingOriginal));
+            if (index >= 0) list[index] = card; else list.Add(card);
+            _selected.Remove(_editingOriginal);
+        }
+
+        _editing = null;
+        Changed();
+    }
+
+    private void ApplyAndNew()
+    {
+        var topics = _editing!.Topics;
+        Apply();
+        New();
+        _editing!.Topics = [.. topics];
+    }
+
+    private async Task DeleteEditing()
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", $"„{_editingOriginal!.Word}“ löschen?"))
+            return;
+
+        Set[_language].Vocabulary.RemoveAll(c => ReferenceEquals(c, _editingOriginal));
+        _selected.Remove(_editingOriginal);
+        _editing = null;
+        Changed();
+    }
+
+    private void Toggle(VocabularyCard card, bool selected)
+    {
+        if (selected) _selected.Add(card); else _selected.Remove(card);
+    }
+
+    private void SelectAll(List<VocabularyCard> rows, bool selected)
+    {
+        foreach (var card in rows) Toggle(card, selected);
+    }
+
+    private void BulkTopic(bool add)
+    {
+        var topic = _bulkTopic.Trim();
+        var list = Set[_language].Vocabulary;
+
+        // Gleiche Schreibweise wie ein vorhandenes Thema.
+        topic = Set[_language].Topics.FirstOrDefault(t => TopicNames.Same(t, topic)) ?? topic;
+
+        for (var i = 0; i < list.Count; i++)
+        {
+            if (!_selected.Contains(list[i]))
+                continue;
+
+            var topics = (list[i].Topics ?? []).Where(t => !TopicNames.Same(t, topic)).ToList();
+            if (add) topics.Add(topic);
+            list[i] = list[i] with { Topics = topics };
+        }
+
+        _selected.Clear();
+        _bulkTopic = "";
+        Changed();
+    }
+
+    private async Task BulkDelete()
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", $"{_selected.Count} Vokabeln löschen?"))
+            return;
+
+        Set[_language].Vocabulary.RemoveAll(_selected.Contains);
+        _selected.Clear();
+        _editing = null;
+        Changed();
+    }
+
+    private sealed record ImportResult(List<VocabularyCard> New, List<VocabularyCard> Existing, List<string> Invalid);
+
+    private ImportResult ParseImport(LanguageContent content)
+    {
+        var result = new ImportResult([], [], []);
+
+        foreach (var raw in _importText.Split('\n').Select(line => line.Trim()).Where(line => line.Length > 0))
+        {
+            var parts = raw.Contains('\t') ? raw.Split('\t')
+                : raw.Contains(';') ? raw.Split(';')
+                : raw.Split(" = ");
+
+            var words = Alternatives(parts[0]);
+            var german = parts.Length > 1 ? Alternatives(parts[1]) : [];
+
+            if (words.Count == 0 || german.Count == 0 || raw.Contains('|') || words[0].StartsWith('#'))
+            {
+                result.Invalid.Add(raw);
+                continue;
+            }
+
+            var existing = content.Vocabulary.FirstOrDefault(card => string.Equals(card.Word, words[0], StringComparison.OrdinalIgnoreCase))
+                           ?? result.New.FirstOrDefault(card => string.Equals(card.Word, words[0], StringComparison.OrdinalIgnoreCase));
+
+            if (existing is not null)
+            {
+                if (!result.Existing.Contains(existing) && !result.New.Contains(existing)) result.Existing.Add(existing);
+                continue;
+            }
+
+            result.New.Add(new VocabularyCard(
+                words[0],
+                german[0],
+                parts.Length > 2 ? parts[2].Trim() : "",
+                german.Skip(1).ToList(),
+                words.Skip(1).ToList(),
+                [.. _importTopics]));
+        }
+
+        return result;
+    }
+
+    private static List<string> Alternatives(string text) =>
+        text.Split('/').Select(t => t.Trim()).Where(t => t.Length > 0).ToList();
+
+    private void Import(ImportResult import)
+    {
+        var list = Set[_language].Vocabulary;
+        list.AddRange(import.New);
+
+        foreach (var card in import.Existing)
+        {
+            var index = list.FindIndex(c => ReferenceEquals(c, card));
+            var topics = (card.Topics ?? []).Concat(_importTopics).Distinct(TopicNames.Comparer).ToList();
+            list[index] = card with { Topics = topics };
+        }
+
+        _importing = false;
+        _importText = "";
+        _importTopics = [];
+        Changed();
+    }
+
+    private sealed class VocabDraft
+    {
+        public string Word { get; set; } = "";
+        public string German { get; set; } = "";
+        public string Hint { get; set; } = "";
+        public List<string> GermanAlternatives { get; set; } = [];
+        public List<string> WordAlternatives { get; set; } = [];
+        public List<string> Topics { get; set; } = [];
+        public string? Id { get; set; }
+
+        public static VocabDraft From(VocabularyCard card) => new()
+        {
+            Word = card.Word,
+            German = card.German,
+            Hint = card.Hint,
+            GermanAlternatives = [.. card.GermanAlternatives],
+            WordAlternatives = [.. card.WordAlternatives],
+            Topics = [.. card.Topics ?? []],
+            Id = card.Id
+        };
+
+        public VocabularyCard ToCard() =>
+            new(Word.Trim(), German.Trim(), Hint.Trim(), [.. GermanAlternatives], [.. WordAlternatives], [.. Topics], Id);
+    }
+}

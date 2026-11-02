@@ -26,7 +26,7 @@ public static class ContentSync
 
         Directory.CreateDirectory(cacheFolder);
 
-        foreach (var relativePath in ContentStore.AllFiles)
+        foreach (var relativePath in ContentFiles.All)
         {
             try
             {
@@ -41,7 +41,7 @@ public static class ContentSync
 
                 var text = await response.Content.ReadAsStringAsync(cancellationToken);
 
-                if (!ContentStore.IsValid(relativePath, text))
+                if (!ContentFiles.IsValid(relativePath, text))
                 {
                     errors.Add($"{relativePath}: ungültiger Inhalt, bisherige Version bleibt aktiv");
                     continue;

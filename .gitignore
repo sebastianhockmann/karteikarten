@@ -11,3 +11,6 @@ TestResults/
 
 *.pdb
 artifacts/
+
+# Kopie von content/ für den Demo-Modus der Pflege-Oberfläche
+src/EnglishSteamTrainer.Admin/wwwroot/demo-content/

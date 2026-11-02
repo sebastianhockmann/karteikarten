@@ -39,13 +39,15 @@ public static class ProgressReport
     /// Enthält bewusst keine Uhrzeit des Erstellens, nur das Datum: so ändert sich der
     /// Bericht (und damit der Upload) nur bei neuen Antworten oder einmal am Tag.
     /// </summary>
+    /// <param name="topics">Fortschritt je Lernplan-Thema (<see cref="TopicProgress.Compute"/>), optional.</param>
     public static string BuildMarkdown(
         string computer,
         string account,
         LearningLanguage language,
         int requiredCorrectAnswers,
         AnswerJournal journal,
-        DateOnly today)
+        DateOnly today,
+        IReadOnlyList<TopicProgress>? topics = null)
     {
         var days = GetDays(journal, requiredCorrectAnswers, today);
         var lastAnswer = journal.Entries.LastOrDefault(entry => entry.Result is not null);
@@ -89,6 +91,31 @@ public static class ProgressReport
             text.AppendLine($"| {day.Date.ToString("ddd dd.MM.", German)} | {day.Correct} | {day.Wrong} | {goal} |");
         }
 
+        if (topics is { Count: > 0 })
+            AppendTopics(text, topics, today);
+
         return text.ToString();
+    }
+
+    private static void AppendTopics(StringBuilder text, IReadOnlyList<TopicProgress> topics, DateOnly today)
+    {
+        text.AppendLine();
+        text.AppendLine("## Lernplan");
+        text.AppendLine();
+        text.AppendLine($"„Sicher“ = mindestens {ReviewSchedule.MasteredBox}× an verschiedenen Tagen richtig gewusst (Karteikasten-Fach {ReviewSchedule.MasteredBox}+).");
+        text.AppendLine();
+        text.AppendLine("| Zeitraum | Thema | Aufgaben | geübt | sicher |");
+        text.AppendLine("|---|---|---:|---:|---:|");
+
+        foreach (var topic in topics)
+        {
+            var entry = topic.Entry;
+            var marker = entry.IsActive(today) ? " 🎯" : entry.From > today ? " (kommt noch)" : "";
+            var name = string.IsNullOrWhiteSpace(entry.Title) ? topic.Topic : $"{entry.Title.Trim()}: {topic.Topic}";
+
+            text.AppendLine(
+                $"| {entry.From.ToString("dd.MM.", German)}–{entry.To.ToString("dd.MM.", German)} | {name}{marker} | " +
+                $"{topic.Items} | {topic.Seen} | {topic.Mastered} ({topic.MasteredPercent} %) |");
+        }
     }
 }

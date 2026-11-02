@@ -1,0 +1,193 @@
+@page "/grammatik"
+@inherits ContentPage
+@inject IJSRuntime JS
+
+<PageTitle>Grammatik – Karteikarten</PageTitle>
+
+<h1>Grammatik</h1>
+
+<RequireLoaded>
+    @{
+        var content = Set[_language];
+        var topics = content.Topics.Order(StringComparer.OrdinalIgnoreCase).ToList();
+        var grammarTopics = content.Grammar.Select(q => q.Hint).Distinct(TopicNames.Comparer).Order(StringComparer.OrdinalIgnoreCase).ToList();
+        var rows = content.Grammar.Where(q => _topicFilter == "" || q.HasTopic(_topicFilter)).ToList();
+    }
+
+    <LanguageTabs Value="_language" ValueChanged="SwitchLanguage" />
+
+    <p class="small muted">
+        Auswahlfrage mit vier Knöpfen: die richtige Form und genau drei falsche. Das Thema wird bei der Frage angezeigt
+        und kann im Lernplan verwendet werden.
+    </p>
+
+    @if (_editing is not null)
+    {
+        <div class="panel">
+            <h2 style="margin-top:0">@(_original is null ? "Neue Frage" : $"„{_original.Key}“ bearbeiten")</h2>
+            <div class="grid2">
+                <label class="field"><span>Subjekt</span><input @bind="_editing.Subject" @bind:event="oninput" placeholder="z. B. yo, he" /></label>
+                <label class="field"><span>Verb (Grundform)</span><input @bind="_editing.Verb" @bind:event="oninput" placeholder="z. B. hablar" /></label>
+                <label class="field"><span>Richtige Form</span><input @bind="_editing.Correct" @bind:event="oninput" /></label>
+                <label class="field">
+                    <span>Thema</span>
+                    <input list="grammar-topics" @bind="_editing.Topic" @bind:event="oninput" placeholder="z. B. Presente" />
+                    <datalist id="grammar-topics">
+                        @foreach (var topic in topics)
+                        {
+                            <option value="@topic"></option>
+                        }
+                    </datalist>
+                </label>
+                @for (var i = 0; i < TenseQuestionRepository.DistractorCount; i++)
+                {
+                    var index = i;
+                    <label class="field"><span>Falsche Antwort @(index + 1)</span><input @bind="_editing.Distractors[index]" @bind:event="oninput" /></label>
+                }
+            </div>
+
+            @{ var errors = Validate(content); }
+            @if (errors.Count > 0)
+            {
+                <div class="notice error" style="margin-top:0.75rem">@string.Join(" ", errors)</div>
+            }
+
+            <div class="row" style="margin-top:0.75rem">
+                <button class="primary" disabled="@(errors.Count > 0)" @onclick="Apply">Übernehmen</button>
+                <button @onclick="() => _editing = null">Abbrechen</button>
+                @if (_original is not null)
+                {
+                    <span class="grow"></span>
+                    <button class="danger" @onclick="Delete">Löschen</button>
+                }
+            </div>
+        </div>
+    }
+
+    <div class="row" style="margin-bottom:0.75rem">
+        <select @bind="_topicFilter">
+            <option value="">Alle Themen</option>
+            @foreach (var topic in grammarTopics)
+            {
+                <option value="@topic">@topic (@content.Grammar.Count(q => q.HasTopic(topic)))</option>
+            }
+        </select>
+        <span class="muted small">@rows.Count von @content.Grammar.Count</span>
+        <span class="grow"></span>
+        <button class="primary" @onclick="New">+ Neue Frage</button>
+    </div>
+
+    <table class="data">
+        <thead><tr><th>Frage</th><th>Richtig</th><th>Falsch</th><th>Thema</th></tr></thead>
+        <tbody>
+            @foreach (var question in rows)
+            {
+                <tr class="clickable" @onclick="() => Edit(question)">
+                    <td><b>@question.Key</b></td>
+                    <td>@question.CorrectForm</td>
+                    <td class="small">@string.Join(", ", question.Distractors)</td>
+                    <td><span class="chip topic">@question.Hint</span></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</RequireLoaded>
+
+@code {
+    private LearningLanguage _language = Languages.English;
+    private string _topicFilter = "";
+    private Draft? _editing;
+    private TenseQuestion? _original;
+
+    [SupplyParameterFromQuery(Name = "sprache")] public string? LanguageCode { get; set; }
+    [SupplyParameterFromQuery(Name = "thema")] public string? Topic { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _language = Languages.Find(LanguageCode) ?? _language;
+        _topicFilter = Topic ?? _topicFilter;
+    }
+
+    private void SwitchLanguage(LearningLanguage language)
+    {
+        _language = language;
+        _editing = null;
+        _topicFilter = "";
+    }
+
+    private void New()
+    {
+        _original = null;
+        _editing = new Draft { Topic = _topicFilter };
+    }
+
+    private void Edit(TenseQuestion question)
+    {
+        _original = question;
+        _editing = new Draft
+        {
+            Subject = question.Subject,
+            Verb = question.VerbBase,
+            Correct = question.CorrectForm,
+            Distractors = [.. question.Distractors.Concat(Enumerable.Repeat("", 3)).Take(3)],
+            Topic = question.Hint == TenseQuestionRepository.DefaultTopic ? "" : question.Hint
+        };
+    }
+
+    private List<string> Validate(LanguageContent content)
+    {
+        var d = _editing!;
+        var errors = new List<string>();
+        var values = new[] { d.Subject, d.Verb, d.Correct, d.Topic }.Concat(d.Distractors).ToList();
+        var distractors = d.Distractors.Select(x => x.Trim()).ToList();
+
+        if (new[] { d.Subject, d.Verb, d.Correct }.Any(string.IsNullOrWhiteSpace)) errors.Add("Subjekt, Verb und richtige Form sind Pflicht.");
+        if (distractors.Any(x => x.Length == 0) || distractors.Distinct().Count() != distractors.Count || distractors.Contains(d.Correct.Trim()))
+            errors.Add("Drei verschiedene falsche Antworten, keine davon gleich der richtigen.");
+        if (values.Any(v => v.IndexOfAny([';', '|']) >= 0)) errors.Add("; und | sind nicht erlaubt.");
+
+        var key = $"{d.Subject.Trim()} / {d.Verb.Trim()}";
+        if (content.Grammar.Any(q => !ReferenceEquals(q, _original) && string.Equals(q.Key, key, StringComparison.OrdinalIgnoreCase)))
+            errors.Add($"„{key}“ gibt es schon.");
+
+        return errors;
+    }
+
+    private void Apply()
+    {
+        var d = _editing!;
+        var question = new TenseQuestion(
+            d.Subject.Trim(),
+            d.Verb.Trim(),
+            d.Correct.Trim(),
+            d.Distractors.Select(x => x.Trim()).ToList(),
+            string.IsNullOrWhiteSpace(d.Topic) ? TenseQuestionRepository.DefaultTopic : d.Topic.Trim());
+
+        var list = Set[_language].Grammar;
+        var index = _original is null ? -1 : list.FindIndex(q => ReferenceEquals(q, _original));
+
+        if (index >= 0) list[index] = question; else list.Add(question);
+
+        _editing = null;
+        Changed();
+    }
+
+    private async Task Delete()
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", $"„{_original!.Key}“ löschen?"))
+            return;
+
+        Set[_language].Grammar.RemoveAll(q => ReferenceEquals(q, _original));
+        _editing = null;
+        Changed();
+    }
+
+    private sealed class Draft
+    {
+        public string Subject { get; set; } = "";
+        public string Verb { get; set; } = "";
+        public string Correct { get; set; } = "";
+        public string[] Distractors { get; set; } = ["", "", ""];
+        public string Topic { get; set; } = "";
+    }
+}

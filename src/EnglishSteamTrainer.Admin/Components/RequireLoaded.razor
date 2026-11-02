@@ -1,0 +1,18 @@
+@inject ContentState State
+
+@if (State.IsLoaded)
+{
+    @ChildContent
+}
+else if (State.Connecting)
+{
+    <p class="muted">Inhalte werden von GitHub geladen …</p>
+}
+else
+{
+    <div class="notice info">Bitte zuerst auf der <a href="">Übersicht</a> mit GitHub verbinden.</div>
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

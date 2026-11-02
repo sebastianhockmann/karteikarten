@@ -1,0 +1,160 @@
+@page "/verben"
+@inherits ContentPage
+@inject IJSRuntime JS
+
+<PageTitle>Unregelmäßige Verben – Karteikarten</PageTitle>
+
+<h1>Unregelmäßige Verben</h1>
+
+<RequireLoaded>
+    @{
+        var language = Languages.All.First(l => l.HasVerbForms);
+        var content = Set[language];
+        var topics = content.Topics.Order(StringComparer.OrdinalIgnoreCase).ToList();
+        var search = _search.Trim();
+        var rows = content.Verbs
+            .Where(v => search.Length == 0 || v.All.Any(f => f.Any(x => x.Contains(search, StringComparison.OrdinalIgnoreCase))) || v.German.Contains(search, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+
+    <p class="small muted">
+        Nur für @language.Name. Eine Form und die deutsche Bedeutung werden vorgegeben, die anderen beiden tippt das Kind ein.
+        Mehrere richtige Schreibweisen (z. B. <i>was</i> und <i>were</i>) als einzelne Einträge – die erste wird angezeigt.
+    </p>
+
+    @if (_editing is not null)
+    {
+        <div class="panel">
+            <h2 style="margin-top:0">@(_original is null ? "Neues Verb" : $"„{_original.Key}“ bearbeiten")</h2>
+            <div class="grid2">
+                @for (var i = 0; i < VerbForms.FormNames.Length; i++)
+                {
+                    var form = i;
+                    <label class="field"><span>@VerbForms.FormNames[form]</span><ChipInput @bind-Values="_editing.Forms[form]" /></label>
+                }
+                <label class="field"><span>Deutsch</span><input @bind="_editing.German" @bind:event="oninput" /></label>
+                <label class="field"><span>Themen (optional)</span><ChipInput @bind-Values="_editing.Topics" Suggestions="topics" ChipClass="topic" Placeholder="Thema …" /></label>
+            </div>
+
+            @{ var errors = Validate(content); }
+            @if (errors.Count > 0)
+            {
+                <div class="notice error" style="margin-top:0.75rem">@string.Join(" ", errors)</div>
+            }
+
+            <div class="row" style="margin-top:0.75rem">
+                <button class="primary" disabled="@(errors.Count > 0)" @onclick="() => Apply(content)">Übernehmen</button>
+                <button @onclick="() => _editing = null">Abbrechen</button>
+                @if (_original is not null)
+                {
+                    <span class="grow"></span>
+                    <button class="danger" @onclick="() => Delete(content)">Löschen</button>
+                }
+            </div>
+        </div>
+    }
+
+    <div class="row" style="margin-bottom:0.75rem">
+        <input type="search" placeholder="Suchen …" @bind="_search" @bind:event="oninput" />
+        <span class="muted small">@rows.Count von @content.Verbs.Count</span>
+        <span class="grow"></span>
+        <button class="primary" @onclick="New">+ Neues Verb</button>
+    </div>
+
+    <table class="data">
+        <thead>
+            <tr>
+                @foreach (var name in VerbForms.FormNames)
+                {
+                    <th>@name</th>
+                }
+                <th>Deutsch</th>
+                <th>Themen</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var verb in rows)
+            {
+                <tr class="clickable" @onclick="() => Edit(verb)">
+                    <td><b>@verb.Display(0)</b></td>
+                    <td>@verb.Display(1)</td>
+                    <td>@verb.Display(2)</td>
+                    <td>@verb.German</td>
+                    <td>
+                        @foreach (var topic in verb.Topics ?? [])
+                        {
+                            <span class="chip topic">@topic</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</RequireLoaded>
+
+@code {
+    private string _search = "";
+    private Draft? _editing;
+    private VerbForms? _original;
+
+    private void New()
+    {
+        _original = null;
+        _editing = new Draft();
+    }
+
+    private void Edit(VerbForms verb)
+    {
+        _original = verb;
+        _editing = new Draft
+        {
+            Forms = [[.. verb.Infinitive], [.. verb.SimplePast], [.. verb.PastParticiple]],
+            German = verb.German,
+            Topics = [.. verb.Topics ?? []]
+        };
+    }
+
+    private List<string> Validate(LanguageContent content)
+    {
+        var d = _editing!;
+        var errors = new List<string>();
+
+        if (d.Forms.Any(f => f.Count == 0) || string.IsNullOrWhiteSpace(d.German)) errors.Add("Alle drei Formen und Deutsch sind Pflicht.");
+        if (d.Forms.SelectMany(f => f).Concat(d.Topics).Append(d.German).Any(v => v.IndexOfAny([';', '|']) >= 0)) errors.Add("; und | sind nicht erlaubt.");
+
+        if (d.Forms[0].Count > 0
+            && content.Verbs.Any(v => !ReferenceEquals(v, _original) && string.Equals(v.Key, d.Forms[0][0], StringComparison.OrdinalIgnoreCase)))
+            errors.Add($"„{d.Forms[0][0]}“ gibt es schon.");
+
+        return errors;
+    }
+
+    private void Apply(LanguageContent content)
+    {
+        var d = _editing!;
+        var verb = new VerbForms([.. d.Forms[0]], [.. d.Forms[1]], [.. d.Forms[2]], d.German.Trim(), [.. d.Topics]);
+        var index = _original is null ? -1 : content.Verbs.FindIndex(v => ReferenceEquals(v, _original));
+
+        if (index >= 0) content.Verbs[index] = verb; else content.Verbs.Add(verb);
+
+        _editing = null;
+        Changed();
+    }
+
+    private async Task Delete(LanguageContent content)
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", $"„{_original!.Key}“ löschen?"))
+            return;
+
+        content.Verbs.RemoveAll(v => ReferenceEquals(v, _original));
+        _editing = null;
+        Changed();
+    }
+
+    private sealed class Draft
+    {
+        public List<string>[] Forms { get; set; } = [[], [], []];
+        public string German { get; set; } = "";
+        public List<string> Topics { get; set; } = [];
+    }
+}

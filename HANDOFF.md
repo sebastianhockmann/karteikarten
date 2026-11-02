@@ -1,11 +1,74 @@
 # Handoff: English Steam Trainer
 
-Stand: 2026-10-25. Die Bedienung und Pflege beschreibt `README.md`. Hier steht nur,
+Stand: 2026-11-02. Die Bedienung und Pflege beschreibt `README.md`. Hier steht nur,
 was nicht offensichtlich ist.
 
 ## Status
 
-`main` ist gepusht, zuletzt veröffentlicht: **v1.2.1** (Tags v1.0.0–v1.2.1).
+Zuletzt veröffentlicht: **v1.3.0**. In Arbeit (nicht committet): **1.4.0**.
+
+### Lernplan, Karteikasten, Pflege-Oberfläche (für 1.4.0, 2026-11-02)
+
+Anlass: Mit wachsendem Wortschatz waren Themen (CSV) und Zeiträume
+(config.json) getrennt zu pflegen und unflexibel. Die frühere Entscheidung
+„kein grafischer Admin-Editor“ (siehe unten) ist damit überholt; umgesetzt
+wurde die dort genannte Variante (statische Seite auf GitHub Pages, speichert
+per Commit).
+
+- **Neues Projekt `EnglishSteamTrainer.Content` (net10.0):** alles
+  Plattformunabhängige aus Core (Parser, TrainerConfig, AnswerChecker, XpRules,
+  QuizItem/-Order) plus neu: `LearningPlan`, `ReviewSchedule`, `QuizPlanner`,
+  `ContentSet`/`ContentCheck`/`ContentFiles`, `TopicProgress`, CSV-Writer.
+  Namespace bleibt `EnglishSteamTrainer.Core`. Core (net10.0-windows)
+  referenziert es. Grund: Blazor im Browser kann kein `-windows`-Projekt laden.
+- **`content/plan.json`** ersetzt `focusTopics` (das wird weiter gelesen und
+  hinten angehängt). Einträge pro Sprache und/oder Konto, mehrere Themen,
+  Titel. `holdBackPlannedTopics`: Themen, die erst später geplant sind, fallen
+  vorher aus der Abfrage. Der Eintrag Party-Essen (es, 02.–08.11.) ist aus
+  config.json nach plan.json gewandert – v1.3.0-PCs haben damit bis zum Update
+  kein Thema der Woche.
+- **Karteikasten** aus dem Journal berechnet (Fächer 1–5, 1/3/7/14/30 Tage).
+  Richtig zählt nur, wenn fällig; nach einem Fehler erst wieder Fach 1. Die
+  Reihenfolge der Runde baut `QuizPlanner` (vorher in `MainWindow`).
+- **Stabile IDs:** Spalte `Id` in vocabulary.csv, Journal-Schlüssel ist
+  `card.Key` (= Id, sonst Word). Die Oberfläche setzt Id beim Umbenennen eines
+  gespeicherten Worts. Grammatik/Verben haben weiter ihren natürlichen
+  Schlüssel (Subjekt/Verb bzw. Infinitiv).
+- **Neue Spalten** `verbs.csv` → `Topics`; Grammatik-`Topic` zählt als Thema.
+  Die CSV-Dateien wurden einmal mit dem neuen Writer geschrieben (nur
+  Kopfzeilen und zwei überflüssige `;;`). Test
+  `Writing_the_content_back_changes_nothing` sichert, dass Speichern aus der
+  Oberfläche nichts ungewollt umformatiert. Writer schreibt LF wie im Repo.
+- **Bericht:** Tabelle „Lernplan“ je Thema (Aufgaben/geübt/sicher), der
+  Watchdog lädt dafür Plan und Inhalte.
+- **Pflege-Oberfläche** `src/EnglishSteamTrainer.Admin` (Blazor WASM),
+  `.github/workflows/admin.yml` → GitHub Pages. Liest/schreibt über die
+  Git-Daten-API (ein Commit für alle Dateien, `force: false` → kein
+  Überschreiben fremder Pushes). Token im localStorage. Demo-Modus liest eine
+  beim Build kopierte `wwwroot/demo-content/` (gitignored).
+
+Verifiziert: Build der Solution, 139 Tests grün. Oberfläche mit Edge
+(playwright-core) im Demo-Modus durchgeklickt, Dev-Server und getrimmter
+Release-Build unter `/karteikarten/`: Filtern, Bearbeiten/Umbenennen (Id),
+Thema für Auswahl, Liste einfügen, Thema umbenennen, Thema auf Woche ziehen,
+Eintrag verschieben, Vorschau, Speichern im Demo gesperrt, Verwerfen – keine
+Konsolenfehler. GitHub-API: Lese-Endpunkte und CORS-Preflight (PATCH mit
+Authorization) gegen das echte Repo geprüft.
+
+**Nicht verifiziert:** Speichern auf GitHub (braucht ein Token, kein
+Test-Commit gemacht) und die Berichte-Seite mit Token. Erster echter
+Speicher-Vorgang: danach den Commit auf GitHub ansehen.
+
+Offen, in dieser Reihenfolge:
+1. Committen, pushen (CI baut jetzt auch die Oberfläche).
+2. Repo → Settings → Pages → Source „GitHub Actions“, dann die Action
+   „Pflege-Oberfläche“ laufen lassen (oder nächster Push).
+3. Fine-grained Token für die Oberfläche anlegen (Contents RW, nur dieses
+   Repo), einloggen, eine kleine Änderung speichern.
+4. Version 1.4.0 taggen und veröffentlichen (Directory.Build.props steht schon
+   auf 1.4.0).
+5. Lern-App 1.4.0 auf echtem Bildschirm ansehen (Kopfzeile mit Titel/mehreren
+   Themen, 🎯 bei Grammatik/Verben, Fußzeile „… erst später laut Lernplan“).
 
 ### Thema der Woche (für 1.3.0, 2026-10-30, noch nicht veröffentlicht)
 
@@ -66,10 +129,9 @@ Offen, in dieser Reihenfolge:
   Programmversionen ignorieren das Feld und die Datei.
 - Build + 82 Tests grün. **UI nicht gestartet** (Layout der drei Eingabefelder
   auf echtem Bildschirm prüfen).
-- Entscheidung: **kein grafischer Admin-Editor.** Inhalte werden weiter auf
-  GitHub bearbeitet (oder die CSV-Dateien in Excel, Trennzeichen `;`), CI prüft.
-  Sollte doch einer nötig werden: statische Seite über GitHub Pages, die per
-  Commit speichert, keine Desktop-App.
+- Entscheidung (2026-10-25, überholt am 2026-11-02 durch die
+  Pflege-Oberfläche): kein grafischer Admin-Editor. Falls doch: statische
+  Seite über GitHub Pages, die per Commit speichert, keine Desktop-App.
 
 ### Testmodus (in v1.2.1, 2026-10-25)
 

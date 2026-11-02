@@ -69,6 +69,28 @@ public sealed class ProgressReportTests : IDisposable
     }
 
     [Fact]
+    public void Markdown_shows_progress_per_planned_topic()
+    {
+        var journal = Journal(AnswerResult.Correct, AnswerResult.Wrong);
+        var plan = new LearningPlan
+        {
+            Schedule = [new PlanEntry { From = Today.AddDays(-2), To = Today.AddDays(4), Title = "Unit 1", Topics = ["Tiere"] }]
+        }.For(Languages.Spanish, "leand");
+        var content = new QuizContent(
+            [new VocabularyCard("word0", "a", "", [], [], ["Tiere"]), new VocabularyCard("word1", "b", "", [], [], ["Tiere"]), new VocabularyCard("perro", "Hund", "", [], [], ["Tiere"])],
+            [],
+            []);
+
+        var topics = TopicProgress.Compute(plan, Languages.Spanish, content, journal.Entries, Today.AddDays(-90), Today.AddDays(28));
+        var markdown = ProgressReport.BuildMarkdown("GROOT", "leand", Languages.Spanish, 1, journal, Today, topics);
+
+        var topic = Assert.Single(topics);
+        Assert.Equal((3, 2, 0), (topic.Items, topic.Seen, topic.Mastered));
+        Assert.Contains("## Lernplan", markdown);
+        Assert.Contains("| Unit 1: Tiere 🎯 | 3 | 2 | 0 (0 %) |", markdown);
+    }
+
+    [Fact]
     public async Task New_report_is_created_without_sha()
     {
         var api = new FakeGitHub();

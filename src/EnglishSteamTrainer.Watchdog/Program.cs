@@ -155,13 +155,18 @@ async Task<List<string>> UploadReports(HttpClient http)
                 if (sid is null)
                     continue;
 
+                var language = config.Value.FindLanguage(computer, profile.Account) ?? profile.LearningLanguage;
+                var journal = AnswerJournal.Load(sid);
+                var today = DateOnly.FromDateTime(DateTime.Now);
+
                 var report = ProgressReport.BuildMarkdown(
                     computer,
                     profile.Account,
-                    config.Value.FindLanguage(computer, profile.Account) ?? profile.LearningLanguage,
+                    language,
                     config.Value.RequiredCorrectAnswersFor(computer, profile.Account),
-                    AnswerJournal.Load(sid),
-                    DateOnly.FromDateTime(DateTime.Now));
+                    journal,
+                    today,
+                    TopicProgressFor(language, profile.Account, journal, today));
 
                 var path = $"{computer}/{profile.Account}.md";
 
@@ -180,6 +185,18 @@ async Task<List<string>> UploadReports(HttpClient http)
     }
 
     return errors;
+}
+
+// Lernplan-Themen der letzten 3 Monate und der nächsten 4 Wochen.
+List<TopicProgress> TopicProgressFor(LearningLanguage language, string account, AnswerJournal journal, DateOnly today)
+{
+    var plan = ContentStore.LoadPlan().Value.WithLegacyFocusTopics(config.Value.FocusTopics).For(language, account);
+    var content = new QuizContent(
+        ContentStore.LoadVocabulary(language).Value,
+        ContentStore.LoadGrammar(language).Value,
+        ContentStore.LoadVerbForms(language).Value);
+
+    return TopicProgress.Compute(plan, language, content, journal.Entries, today.AddDays(-90), today.AddDays(28));
 }
 
 List<(SecurityIdentifier Sid, string Account)> GetBlockedUsers()

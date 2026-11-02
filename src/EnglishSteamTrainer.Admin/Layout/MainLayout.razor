@@ -1,0 +1,74 @@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject ContentState State
+@inject AdminSettings Settings
+
+<div class="shell">
+    <aside class="sidebar">
+        <div class="brand">📚 Karteikarten <small>Inhalte &amp; Lernplan pflegen</small></div>
+        <nav>
+            <NavLink href="" Match="NavLinkMatch.All">Übersicht</NavLink>
+            <div class="section">Inhalte</div>
+            <NavLink href="vokabeln">Vokabeln</NavLink>
+            <NavLink href="grammatik">Grammatik</NavLink>
+            <NavLink href="verben">Unregelmäßige Verben</NavLink>
+            <NavLink href="themen">Themen</NavLink>
+            <div class="section">Planung</div>
+            <NavLink href="lernplan">Lernplan</NavLink>
+            <NavLink href="vorschau">Vorschau</NavLink>
+            <NavLink href="berichte">Berichte</NavLink>
+        </nav>
+    </aside>
+
+    <main class="main">
+        @if (_ready)
+        {
+            @Body
+        }
+        else
+        {
+            <p class="muted">Lädt …</p>
+        }
+    </main>
+</div>
+
+@if (State.IsLoaded)
+{
+    <SaveBar />
+}
+
+@code {
+    private bool _ready;
+
+    // Mit gespeichertem Token gleich verbinden, damit auch direkte Links (z. B. /lernplan) funktionieren.
+    protected override async Task OnInitializedAsync()
+    {
+        State.Changed += OnChanged;
+        await Settings.LoadAsync();
+        _ready = true;
+
+        if (Settings.Token.Length == 0 || State.IsLoaded)
+            return;
+
+        State.Connecting = true;
+        StateHasChanged();
+
+        try
+        {
+            await State.ConnectAsync();
+        }
+        catch (Exception ex)
+        {
+            State.ConnectError = ex.Message;
+        }
+        finally
+        {
+            State.Connecting = false;
+            State.NotifyChanged();
+        }
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => State.Changed -= OnChanged;
+}

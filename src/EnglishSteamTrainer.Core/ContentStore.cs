@@ -10,45 +10,39 @@ public enum ContentSource
 public sealed record LoadedContent<T>(T Value, ContentSource Source);
 
 /// <summary>
-/// Vokabeln, Grammatik und config.json kommen aus dem Ordner content/ im GitHub-Repo.
+/// Vokabeln, Grammatik, Lernplan und config.json kommen aus dem Ordner content/ im GitHub-Repo.
 /// Reihenfolge beim Laden: zuletzt online geladene Version (Cache, nur von SYSTEM/Admins
 /// beschreibbar) -> mit der App ausgelieferte Version -> eingebaute Standardwerte.
 /// </summary>
 public static class ContentStore
 {
-    public const string ConfigFile = "config.json";
-
     public static string CacheRoot => Path.Combine(DailyUnlock.SharedFolder, "cache");
     public static string CacheFolder => Path.Combine(CacheRoot, "content");
     public static string LastSyncFile => Path.Combine(CacheRoot, "last-sync.txt");
     public static string BundledFolder => Path.Combine(AppContext.BaseDirectory, "content");
 
-    public static string VocabularyFile(LearningLanguage language) => $"{language.Code}/vocabulary.csv";
-    public static string GrammarFile(LearningLanguage language) => $"{language.Code}/grammar.csv";
-    public static string VerbFormsFile(LearningLanguage language) => $"{language.Code}/verbs.csv";
-
-    public static IEnumerable<string> AllFiles =>
-        Languages.All
-            .SelectMany(language => language.HasVerbForms
-                ? new[] { VocabularyFile(language), GrammarFile(language), VerbFormsFile(language) }
-                : new[] { VocabularyFile(language), GrammarFile(language) })
-            .Prepend(ConfigFile);
-
     public static LoadedContent<TrainerConfig> LoadConfig()
     {
-        return Load(ConfigFile, TrainerConfig.TryParse)
+        return Load(ContentFiles.Config, TrainerConfig.TryParse)
                ?? new LoadedContent<TrainerConfig>(TrainerConfig.Default, ContentSource.BuiltIn);
+    }
+
+    /// <summary>Ohne plan.json (z. B. vor dem ersten Abgleich) gilt ein leerer Plan.</summary>
+    public static LoadedContent<LearningPlan> LoadPlan()
+    {
+        return Load(ContentFiles.Plan, LearningPlan.TryParse)
+               ?? new LoadedContent<LearningPlan>(new LearningPlan(), ContentSource.BuiltIn);
     }
 
     public static LoadedContent<List<VocabularyCard>> LoadVocabulary(LearningLanguage language)
     {
-        return Load(VocabularyFile(language), text => NonEmpty(VocabularyRepository.Parse(text)))
+        return Load(ContentFiles.Vocabulary(language), text => NonEmpty(VocabularyRepository.Parse(text)))
                ?? new LoadedContent<List<VocabularyCard>>([], ContentSource.BuiltIn);
     }
 
     public static LoadedContent<List<TenseQuestion>> LoadGrammar(LearningLanguage language)
     {
-        return Load(GrammarFile(language), text => NonEmpty(TenseQuestionRepository.Parse(text)))
+        return Load(ContentFiles.Grammar(language), text => NonEmpty(TenseQuestionRepository.Parse(text)))
                ?? new LoadedContent<List<TenseQuestion>>([], ContentSource.BuiltIn);
     }
 
@@ -57,29 +51,8 @@ public static class ContentStore
         if (!language.HasVerbForms)
             return new LoadedContent<List<VerbForms>>([], ContentSource.BuiltIn);
 
-        return Load(VerbFormsFile(language), text => NonEmpty(VerbFormsRepository.Parse(text)))
+        return Load(ContentFiles.VerbForms(language), text => NonEmpty(VerbFormsRepository.Parse(text)))
                ?? new LoadedContent<List<VerbForms>>([], ContentSource.BuiltIn);
-    }
-
-    /// <summary>
-    /// Gleiche Prüfung beim Herunterladen wie beim Laden: Unbrauchbares landet gar
-    /// nicht erst im Cache, die letzte gute Version bleibt erhalten.
-    /// </summary>
-    public static bool IsValid(string relativePath, string text)
-    {
-        if (relativePath == ConfigFile)
-            return TrainerConfig.TryParse(text) is not null;
-
-        if (relativePath.EndsWith("/vocabulary.csv", StringComparison.Ordinal))
-            return VocabularyRepository.Parse(text).Count > 0;
-
-        if (relativePath.EndsWith("/grammar.csv", StringComparison.Ordinal))
-            return TenseQuestionRepository.Parse(text).Count > 0;
-
-        if (relativePath.EndsWith("/verbs.csv", StringComparison.Ordinal))
-            return VerbFormsRepository.Parse(text).Count > 0;
-
-        return false;
     }
 
     public static DateTime? GetLastSync()

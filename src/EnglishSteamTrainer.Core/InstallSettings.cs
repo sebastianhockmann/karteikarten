@@ -16,12 +16,7 @@ public sealed class InstallSettings
     public const string DefaultContentBaseUrl =
         "https://raw.githubusercontent.com/" + DefaultRepository + "/main/content/";
 
-    public static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true,
-        WriteIndented = true
-    };
+    public static readonly JsonSerializerOptions JsonOptions = ContentJson.Options;
 
     public string Repository { get; set; } = DefaultRepository;
     public string ContentBaseUrl { get; set; } = DefaultContentBaseUrl;

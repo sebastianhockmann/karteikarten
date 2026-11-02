@@ -23,13 +23,14 @@ public partial class MainWindow : Window
     private readonly LoadedContent<List<VocabularyCard>> _vocabCards;
     private readonly LoadedContent<List<TenseQuestion>> _tenseQuestions;
     private readonly LoadedContent<List<VerbForms>> _verbForms;
-    private readonly FocusTopic? _focusTopic;
+    private readonly LoadedContent<LearningPlan> _plan;
     private readonly TestOptions? _test;
     private readonly Random _random = new();
 
     private readonly Queue<QuizItem> _quizQueue = new();
     private readonly DispatcherTimer _advanceTimer;
 
+    private QuizSession? _session;
     private QuizItem? _currentItem;
     private bool _currentItemSolved;
     private DateOnly _correctTodayDate;
@@ -52,7 +53,7 @@ public partial class MainWindow : Window
         _vocabCards = ContentStore.LoadVocabulary(_language);
         _tenseQuestions = ContentStore.LoadGrammar(_language);
         _verbForms = ContentStore.LoadVerbForms(_language);
-        _focusTopic = FindFocusTopic();
+        _plan = ContentStore.LoadPlan();
 
         _advanceTimer = new DispatcherTimer { Interval = AdvanceDelay };
         _advanceTimer.Tick += (_, _) =>
@@ -61,9 +62,9 @@ public partial class MainWindow : Window
             ShowItem();
         };
 
-        ApplyLanguageAndConfig();
         RefreshCorrectToday();
         BuildQuizQueue();
+        ApplyLanguageAndConfig();
 
         UpdateUi();
 
@@ -85,16 +86,11 @@ public partial class MainWindow : Window
         _config.Value.RequiredCorrectAnswersFor(Environment.MachineName, Environment.UserName);
     private string BlockedAppsText => _config.Value.BlockedAppsText;
 
-    // Nur wenn es zum Thema auch Vokabeln gibt - sonst wäre die Anzeige irreführend.
-    private FocusTopic? FindFocusTopic()
-    {
-        var focus = _config.Value.FindFocusTopic(_language, DateOnly.FromDateTime(DateTime.Now));
+    private PlanEntry? FocusEntry => _session?.Focus;
 
-        return focus is not null && _vocabCards.Value.Any(card => card.HasTopic(focus.Topic)) ? focus : null;
-    }
-
-    private bool IsFocusItem(QuizItem item) =>
-        _focusTopic is not null && item is VocabQuizItem vocab && vocab.Card.HasTopic(_focusTopic.Topic);
+    // Präfix für die Frage, wenn die Aufgabe zum Thema gehört, das gerade dran ist.
+    private string FocusPrefix(QuizItem item) =>
+        _session?.FocusTopicOf(item) is { } topic ? $"🎯 {topic} · " : "";
 
     private void ApplyLanguageAndConfig()
     {
@@ -112,9 +108,9 @@ public partial class MainWindow : Window
                 (_test.Only is null ? "" : $" Nur Aufgaben: {_test.Only}.");
         }
 
-        if (_focusTopic is not null)
+        if (FocusEntry is not null)
         {
-            SubtitleText.Text += $"\n🎯 Thema der Woche: {_focusTopic.Topic} (bis {_focusTopic.To:dd.MM.})";
+            SubtitleText.Text += $"\n🎯 Thema der Woche: {FocusEntry.DisplayName} (bis {FocusEntry.To:dd.MM.})";
         }
 
         var apps = BlockedAppView.From(_config.Value.BlockedApps);
@@ -137,80 +133,36 @@ public partial class MainWindow : Window
     }
 
     private string FocusTopicText =>
-        _focusTopic is null
-            ? ""
-            : $" · Thema {_focusTopic.Topic}: {_vocabCards.Value.Count(card => card.HasTopic(_focusTopic.Topic))} Vokabeln";
+        (FocusEntry is null ? "" : $" · Thema {FocusEntry.DisplayName}: {_session!.FocusItemCount} Aufgaben") +
+        (_session is { HeldBackCount: > 0 } ? $" · {_session.HeldBackCount} erst später laut Lernplan" : "");
 
     private string VerbFormsCountText =>
         _language.HasVerbForms ? $", {_verbForms.Value.Count} Verben" : "";
 
     private TextBox[] VerbBoxes => [VerbBox1, VerbBox2, VerbBox3];
 
+    // Reihenfolge: siehe QuizPlanner (Wiederholungen, Karteikasten, Lernplan).
     private void BuildQuizQueue()
     {
         _quizQueue.Clear();
 
-        // Was beim letzten Versuch falsch war, kommt zuerst dran.
-        var repeatVocab = _journal.GetItemsToRepeat(_language, JournalKind.Vocabulary);
-        var repeatGrammar = _journal.GetItemsToRepeat(_language, JournalKind.Grammar);
-        var repeatVerbs = _journal.GetItemsToRepeat(_language, JournalKind.VerbForms);
-
-        var items = new List<QuizItem>();
-
-        foreach (var card in IsIncluded(JournalKind.Vocabulary) ? _vocabCards.Value : [])
-        {
-            items.Add(new VocabQuizItem(card, _random.Next(2) == 0));
-        }
-
-        var tensePool = (IsIncluded(JournalKind.Grammar) ? _tenseQuestions.Value : [])
-            .OrderByDescending(question => repeatGrammar.Contains(question.Key))
-            .ThenBy(_ => _random.Next())
-            .Take(_config.Value.GrammarQuestionsPerSession);
-
-        foreach (var question in tensePool)
-        {
-            var options = new List<string> { question.CorrectForm };
-            options.AddRange(question.Distractors);
-            options = options.OrderBy(_ => _random.Next()).ToList();
-
-            items.Add(new TenseQuizItem(question, options));
-        }
-
-        var verbPool = (IsIncluded(JournalKind.VerbForms) ? _verbForms.Value : [])
-            .OrderByDescending(verb => repeatVerbs.Contains(verb.Key))
-            .ThenBy(_ => _random.Next())
-            .Take(_config.Value.VerbFormQuestionsPerSession);
-
-        foreach (var verb in verbPool)
-        {
-            items.Add(new VerbFormsQuizItem(verb, _random.Next(VerbForms.FormNames.Length)));
-        }
-
-        var shuffled = items.OrderBy(_ => _random.Next()).ToList();
-
-        // Thema der Woche nach vorn, danach (stabil sortiert) zuerst die Wiederholungen.
-        var mixed = QuizOrder.MixFocus(
-            shuffled.Where(IsFocusItem).ToList(),
-            shuffled.Where(item => !IsFocusItem(item)).ToList(),
-            _config.Value.FocusSharePercent,
+        _session = QuizPlanner.Build(
+            new QuizRequest(
+                _language,
+                Environment.UserName,
+                DateOnly.FromDateTime(DateTime.Now),
+                new QuizContent(_vocabCards.Value, _tenseQuestions.Value, _verbForms.Value),
+                _config.Value,
+                _plan.Value,
+                _journal.Entries,
+                _test?.Only),
             _random);
 
-        var ordered = mixed
-            .OrderByDescending(item => item switch
-            {
-                VocabQuizItem vocab => repeatVocab.Contains(vocab.Card.Word),
-                TenseQuizItem tense => repeatGrammar.Contains(tense.Question.Key),
-                VerbFormsQuizItem verb => repeatVerbs.Contains(verb.Verb.Key),
-                _ => false
-            });
-
-        foreach (var item in ordered)
+        foreach (var item in _session.Items)
         {
             _quizQueue.Enqueue(item);
         }
     }
-
-    private bool IsIncluded(string kind) => _test?.Only is null || _test.Only == kind;
 
     private void ShowAlreadyDoneState()
     {
@@ -285,7 +237,7 @@ public partial class MainWindow : Window
         AnswerBox.Text = "";
         AnswerBox.IsEnabled = true;
 
-        VocabHeaderText.Text = (IsFocusItem(item) ? $"🎯 {_focusTopic!.Topic} · " : "") +
+        VocabHeaderText.Text = FocusPrefix(item) +
             (item.AskWordToGerman
                 ? "Was heißt dieses Wort auf Deutsch?"
                 : $"Was heißt dieses Wort auf {_language.Name}?");
@@ -303,7 +255,7 @@ public partial class MainWindow : Window
         TensePanel.Visibility = Visibility.Visible;
         VerbPanel.Visibility = Visibility.Collapsed;
 
-        GrammarHeaderText.Text = $"Welche Form ist richtig? ({item.Question.Hint})";
+        GrammarHeaderText.Text = FocusPrefix(item) + $"Welche Form ist richtig? ({item.Question.Hint})";
         TenseQuestionText.Text = item.Question.Key;
 
         var buttons = new[] { TenseOption1, TenseOption2, TenseOption3, TenseOption4 };
@@ -325,7 +277,7 @@ public partial class MainWindow : Window
         TensePanel.Visibility = Visibility.Collapsed;
         VerbPanel.Visibility = Visibility.Visible;
 
-        VerbHeaderText.Text = $"Ergänze die fehlenden Formen ({VerbForms.FormNames[item.GivenForm]} ist vorgegeben)";
+        VerbHeaderText.Text = FocusPrefix(item) + $"Ergänze die fehlenden Formen ({VerbForms.FormNames[item.GivenForm]} ist vorgegeben)";
         VerbGermanText.Text = item.Verb.German;
 
         var boxes = VerbBoxes;
@@ -440,7 +392,7 @@ public partial class MainWindow : Window
 
         var entry = Record(
             JournalKind.Vocabulary,
-            vocabItem.Card.Word,
+            vocabItem.Card.Key,
             $"{WordText.Text} ({direction})",
             given,
             check.Result);

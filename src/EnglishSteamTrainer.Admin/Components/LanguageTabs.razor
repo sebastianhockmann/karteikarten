@@ -1,0 +1,14 @@
+<div class="tabs">
+    @foreach (var language in Languages.All.Where(l => !OnlyWithVerbForms || l.HasVerbForms))
+    {
+        <button class="@(language == Value ? "active" : "")" @onclick="() => ValueChanged.InvokeAsync(language)">
+            @language.Flag @language.Name
+        </button>
+    }
+</div>
+
+@code {
+    [Parameter] public LearningLanguage Value { get; set; } = Languages.English;
+    [Parameter] public EventCallback<LearningLanguage> ValueChanged { get; set; }
+    [Parameter] public bool OnlyWithVerbForms { get; set; }
+}

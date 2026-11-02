@@ -1,0 +1,396 @@
+@page "/lernplan"
+@inherits ContentPage
+@inject IJSRuntime JS
+
+<PageTitle>Lernplan – Karteikarten</PageTitle>
+
+<h1>Lernplan</h1>
+
+<RequireLoaded>
+    @{
+        var learners = Learner.From(Set.Config);
+        var learner = learners.FirstOrDefault(l => string.Equals(l.Account, _account, StringComparison.OrdinalIgnoreCase));
+        var today = Dates.Today;
+        var paletteLanguages = learner?.Language is { } lang ? new List<LearningLanguage> { lang } : Languages.All.ToList();
+        var planProblems = State.Problems().Where(p => p.File == ContentFiles.Plan).ToList();
+    }
+
+    <div class="row" style="margin-bottom:0.75rem">
+        <div class="tabs" style="margin:0">
+            <button class="@(_account == "" ? "active" : "")" @onclick="() => SelectAccount(string.Empty)">Alle Einträge</button>
+            @foreach (var l in learners)
+            {
+                <button class="@(_account == l.Account ? "active" : "")" @onclick="() => SelectAccount(l.Account)">@l.Label</button>
+            }
+        </div>
+        <span class="grow"></span>
+        <label class="small row" title="Themen, die erst später im Plan stehen, werden vorher nicht abgefragt.">
+            <input type="checkbox" checked="@Set.Plan.HoldBackPlannedTopics" @onchange="e => { Set.Plan.HoldBackPlannedTopics = (bool)e.Value!; Changed(); }" />
+            Geplante Themen erst ab ihrem Zeitraum abfragen
+        </label>
+    </div>
+
+    <p class="small muted">
+        Themen aus der Liste rechts auf eine Woche ziehen (oder „+“ in der Woche). Auf einen vorhandenen Eintrag ziehen fügt das Thema hinzu,
+        einen Eintrag auf eine andere Woche ziehen verschiebt ihn. Eintrag anklicken zum Bearbeiten (Zeitraum, Kinder, Titel).
+        In der Zeit eines Eintrags kommen @Set.Config.FocusSharePercent % der neuen und fälligen Aufgaben aus seinen Themen (<code>focusSharePercent</code> in config.json).
+        @if (_account != "")
+        {
+            <span> Neue Einträge gelten nur für <b>@_account</b>.</span>
+        }
+    </p>
+
+    @if (Set.Config.FocusTopics.Count > 0)
+    {
+        <div class="notice warn">
+            In <code>config.json</code> stehen noch @Set.Config.FocusTopics.Count Einträge unter <code>focusTopics</code> (Version 1.3). Sie gelten weiter,
+            sind hier aber nicht bearbeitbar – am besten hier neu anlegen und in config.json löschen.
+        </div>
+    }
+
+    <ProblemList Problems="planProblems" />
+
+    @if (_selected is not null && _draft is not null)
+    {
+        <div class="panel">
+            <div class="row">
+                <h2 style="margin:0">Eintrag bearbeiten</h2>
+                <span class="grow"></span>
+                <button @onclick="CopyToNextWeek">Kopie eine Woche später</button>
+                <button class="danger" @onclick="DeleteSelected">Löschen</button>
+                <button @onclick="() => Select(null)">Schließen</button>
+            </div>
+            <div class="grid2" style="margin-top:0.75rem">
+                <label class="field"><span>Von</span><input type="date" @bind="_draft.From" @bind:after="Update" /></label>
+                <label class="field"><span>Bis (einschließlich)</span><input type="date" @bind="_draft.To" @bind:after="Update" /></label>
+                <label class="field"><span>Themen</span><ChipInput @bind-Values="_draft.Topics" @bind-Values:after="Update" Suggestions="AllTopics(_draft.Language)" ChipClass="topic" Placeholder="Thema …" /></label>
+                <label class="field"><span>Titel (optional, wird statt der Themen angezeigt)</span><input @bind="_draft.Title" @bind:after="Update" placeholder="z. B. Unit 3: Party" /></label>
+                <label class="field">
+                    <span>Sprache</span>
+                    <select @bind="_draft.Language" @bind:after="Update">
+                        <option value="">alle Sprachen</option>
+                        @foreach (var language in Languages.All)
+                        {
+                            <option value="@language.Code">@language.Flag @language.Name</option>
+                        }
+                    </select>
+                </label>
+                <div class="field">
+                    <span class="small muted"><b>Für</b> (keins angehakt = alle Kinder)</span>
+                    <div class="row">
+                        @foreach (var l in learners)
+                        {
+                            <label class="row small">
+                                <input type="checkbox" checked="@_draft.Accounts.Contains(l.Account, StringComparer.OrdinalIgnoreCase)" @onchange="e => ToggleAccount(l.Account, (bool)e.Value!)" />
+                                @l.Label
+                            </label>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="plan-layout">
+        <div>
+            <div class="row" style="margin-bottom:0.5rem">
+                <button @onclick="() => _start = _start.AddDays(-28)">◀ 4 Wochen früher</button>
+                <button @onclick="() => _start = Dates.Monday(today).AddDays(-14)">Heute</button>
+                <button @onclick="() => _start = _start.AddDays(28)">4 Wochen später ▶</button>
+                <span class="muted small">@Hidden(learner) Einträge außerhalb des Zeitraums</span>
+            </div>
+
+            <div class="weeks">
+                @for (var w = 0; w < Weeks; w++)
+                {
+                    var monday = _start.AddDays(7 * w);
+                    var sunday = monday.AddDays(6);
+                    var entries = Visible(learner).Where(e => e.From <= sunday && e.To >= monday).ToList();
+                    var css = "week"
+                              + (monday <= today && today <= sunday ? " current" : "")
+                              + (sunday < today ? " past" : "")
+                              + (entries.Count == 0 && sunday >= today ? " gap" : "")
+                              + (_dragOver == monday ? " dragover" : "");
+
+                    <div class="@css"
+                         @ondragover:preventDefault="true"
+                         @ondragenter="() => _dragOver = monday"
+                         @ondrop="() => DropOnWeek(monday, learner)">
+                        <div class="when">
+                            <b>KW @Dates.Week(monday)</b> · @Dates.Range(monday, sunday)
+                            <button class="link" title="Neuer Eintrag in dieser Woche" @onclick="() => AddEmpty(monday, learner)">+</button>
+                        </div>
+                        <div class="slot">
+                            @foreach (var entry in entries)
+                            {
+                                <span class="entry @(ReferenceEquals(entry, _selected) ? "selected" : "")"
+                                      draggable="true"
+                                      @ondragstart="() => { _dragEntry = entry; _dragTopic = null; }"
+                                      @ondrop="() => DropOnEntry(entry)"
+                                      @ondrop:stopPropagation="true"
+                                      @onclick="() => Select(entry)">
+                                    @if (!string.IsNullOrWhiteSpace(entry.Title))
+                                    {
+                                        <b>@entry.Title</b>
+                                    }
+                                    @foreach (var topic in entry.Topics)
+                                    {
+                                        <span class="chip topic">@topic</span>
+                                    }
+                                    @if (entry.Topics.Count == 0)
+                                    {
+                                        <span style="color:var(--danger)">Thema fehlt</span>
+                                    }
+                                    <span class="who">@Who(entry, monday, sunday)</span>
+                                </span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="panel palette">
+            <h3 style="margin-top:0">Themen</h3>
+            @foreach (var language in paletteLanguages)
+            {
+                var content = Set[language];
+                <div class="small muted" style="margin:0.5rem 0 0.25rem">@language.Flag @language.Name</div>
+                @foreach (var topic in content.Topics.Order(StringComparer.OrdinalIgnoreCase))
+                {
+                    var planned = Visible(learner).Any(e => e.HasTopic(topic));
+                    <span class="chip topic" draggable="true" title="@(planned ? "schon im Plan" : "noch nicht geplant")"
+                          style="@(planned ? "opacity:0.6" : "")"
+                          @ondragstart="() => { _dragTopic = topic; _dragEntry = null; }">
+                        @topic <span class="muted">@content.CountTopic(topic)</span>
+                    </span>
+                }
+            }
+            <p class="small muted">Blass = steht schon im Plan. Neue Themen entstehen bei den <a href="vokabeln">Vokabeln</a>.</p>
+        </div>
+    </div>
+</RequireLoaded>
+
+@code {
+    private const int Weeks = 20;
+
+    private string _account = "";
+    private DateOnly _start = Dates.Monday(Dates.Today).AddDays(-14);
+    private DateOnly? _dragOver;
+    private string? _dragTopic;
+    private PlanEntry? _dragEntry;
+    private PlanEntry? _selected;
+    private Draft? _draft;
+
+    private List<PlanEntry> Schedule => Set.Plan.Schedule;
+
+    private void SelectAccount(string account)
+    {
+        _account = account;
+        Select(null);
+    }
+
+    // "Alle Einträge" zeigt alles, sonst nur die Einträge, die für das Kind gelten.
+    private IEnumerable<PlanEntry> Visible(Learner? learner) =>
+        learner is null
+            ? Schedule
+            : Schedule.Where(e =>
+                (learner.Language is null ? true : string.IsNullOrWhiteSpace(e.Language) || Languages.Find(e.Language) == learner.Language)
+                && (e.Accounts is not { Count: > 0 } || e.Accounts.Contains(learner.Account, StringComparer.OrdinalIgnoreCase)));
+
+    private int Hidden(Learner? learner)
+    {
+        var end = _start.AddDays(7 * Weeks - 1);
+        return Visible(learner).Count(e => e.To < _start || e.From > end);
+    }
+
+    private string Who(PlanEntry entry, DateOnly monday, DateOnly sunday)
+    {
+        var parts = new List<string>();
+
+        if (_account == "")
+        {
+            if (entry.Accounts is { Count: > 0 }) parts.Add(string.Join(", ", entry.Accounts));
+            if (Languages.Find(entry.Language) is { } language) parts.Add(language.Flag);
+            if (parts.Count == 0) parts.Add("alle");
+        }
+
+        // Nur anzeigen, wenn der Eintrag nicht genau diese Woche abdeckt.
+        if (entry.From != monday || entry.To != sunday)
+            parts.Add(Dates.Range(entry.From, entry.To));
+
+        return string.Join(" · ", parts);
+    }
+
+    private IEnumerable<string> AllTopics(string? languageCode) =>
+        (Languages.Find(languageCode) is { } language ? [language] : Languages.All)
+        .SelectMany(l => Set[l].Topics)
+        .Distinct(TopicNames.Comparer)
+        .Order(StringComparer.OrdinalIgnoreCase);
+
+    // Für "alle Kinder": gibt es das Thema nur in einer Sprache, gilt der Eintrag nur dort.
+    private string? LanguageFor(string topic, Learner? learner)
+    {
+        if (learner is not null)
+            return null;
+
+        var languages = Languages.All.Where(l => Set[l].CountTopic(topic) > 0).ToList();
+        return languages.Count == 1 ? languages[0].Code : null;
+    }
+
+    private void DropOnWeek(DateOnly monday, Learner? learner)
+    {
+        _dragOver = null;
+
+        if (_dragTopic is { } topic)
+        {
+            Add(new PlanEntry
+            {
+                From = monday,
+                To = monday.AddDays(6),
+                Topics = [topic],
+                Language = LanguageFor(topic, learner),
+                Accounts = learner is null ? null : [learner.Account]
+            });
+        }
+        else if (_dragEntry is { } entry)
+        {
+            var shift = monday.DayNumber - Dates.Monday(entry.From).DayNumber;
+
+            if (shift != 0)
+                Replace(entry, entry with { From = entry.From.AddDays(shift), To = entry.To.AddDays(shift) });
+        }
+
+        _dragTopic = null;
+        _dragEntry = null;
+    }
+
+    private void DropOnEntry(PlanEntry entry)
+    {
+        _dragOver = null;
+
+        if (_dragTopic is { } topic && !entry.HasTopic(topic))
+            Replace(entry, entry with { Topics = [.. entry.Topics, topic] });
+        else if (_dragEntry is { } dragged && !ReferenceEquals(dragged, entry))
+            DropOnWeek(Dates.Monday(entry.From), null);
+
+        _dragTopic = null;
+        _dragEntry = null;
+    }
+
+    private void AddEmpty(DateOnly monday, Learner? learner)
+    {
+        Add(new PlanEntry
+        {
+            From = monday,
+            To = monday.AddDays(6),
+            Accounts = learner is null ? null : [learner.Account]
+        });
+    }
+
+    private void Add(PlanEntry entry)
+    {
+        // Nach Beginn sortiert einfügen, damit die Datei übersichtlich bleibt.
+        var index = Schedule.FindIndex(e => e.From > entry.From);
+        Schedule.Insert(index < 0 ? Schedule.Count : index, entry);
+        Select(entry);
+        Changed();
+    }
+
+    private void Replace(PlanEntry old, PlanEntry updated)
+    {
+        var index = Schedule.FindIndex(e => ReferenceEquals(e, old));
+
+        if (index < 0)
+            return;
+
+        Schedule[index] = updated;
+
+        if (ReferenceEquals(_selected, old))
+        {
+            _selected = updated;
+            _draft = Draft.Of(updated);
+        }
+
+        Changed();
+    }
+
+    private void Select(PlanEntry? entry)
+    {
+        _selected = entry;
+        _draft = entry is null ? null : Draft.Of(entry);
+    }
+
+    private void Update()
+    {
+        if (_selected is null || _draft is null)
+            return;
+
+        var index = Schedule.FindIndex(e => ReferenceEquals(e, _selected));
+
+        if (index < 0)
+            return;
+
+        var updated = _draft.ToEntry();
+        Schedule[index] = updated;
+        _selected = updated;
+        Changed();
+    }
+
+    private void ToggleAccount(string account, bool on)
+    {
+        _draft!.Accounts = on
+            ? [.. _draft.Accounts, account]
+            : _draft.Accounts.Where(a => !string.Equals(a, account, StringComparison.OrdinalIgnoreCase)).ToList();
+        Update();
+    }
+
+    private void CopyToNextWeek()
+    {
+        var entry = _selected!;
+        var days = entry.To.DayNumber - entry.From.DayNumber + 1;
+        var shift = Math.Max(7, (days + 6) / 7 * 7);
+
+        Add(entry with { From = entry.From.AddDays(shift), To = entry.To.AddDays(shift) });
+    }
+
+    private async Task DeleteSelected()
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", $"Eintrag „{_selected!.DisplayName}“ ({Dates.Range(_selected.From, _selected.To)}) löschen?"))
+            return;
+
+        Schedule.RemoveAll(e => ReferenceEquals(e, _selected));
+        Select(null);
+        Changed();
+    }
+
+    private sealed class Draft
+    {
+        public DateOnly From { get; set; }
+        public DateOnly To { get; set; }
+        public string Title { get; set; } = "";
+        public string Language { get; set; } = "";
+        public List<string> Accounts { get; set; } = [];
+        public List<string> Topics { get; set; } = [];
+
+        public static Draft Of(PlanEntry entry) => new()
+        {
+            From = entry.From,
+            To = entry.To,
+            Title = entry.Title ?? "",
+            Language = Languages.Find(entry.Language)?.Code ?? "",
+            Accounts = [.. entry.Accounts ?? []],
+            Topics = [.. entry.Topics]
+        };
+
+        public PlanEntry ToEntry() => new()
+        {
+            From = From,
+            To = To,
+            Title = string.IsNullOrWhiteSpace(Title) ? null : Title.Trim(),
+            Language = Language.Length == 0 ? null : Language,
+            Accounts = Accounts.Count == 0 ? null : [.. Accounts],
+            Topics = [.. Topics]
+        };
+    }
+}

@@ -1,12 +1,14 @@
 namespace EnglishSteamTrainer.Core;
 
 /// <summary>
-/// Liest grammar.csv: Subject;Verb;Correct;Distractors;Topic
+/// Liest und schreibt grammar.csv: Subject;Verb;Correct;Distractors;Topic
 /// (genau 3 falsche Antworten, mit | getrennt).
 /// </summary>
 public static class TenseQuestionRepository
 {
     public const int DistractorCount = 3;
+    public const string Header = "Subject;Verb;Correct;Distractors;Topic";
+    public const string DefaultTopic = "Grammatik";
 
     public static List<TenseQuestion> Parse(string csv)
     {
@@ -34,9 +36,21 @@ public static class TenseQuestionRepository
                 parts[1].Trim(),
                 correct,
                 distractors,
-                parts.Length >= 5 && parts[4].Trim().Length > 0 ? parts[4].Trim() : "Grammatik"));
+                parts.Length >= 5 && parts[4].Trim().Length > 0 ? parts[4].Trim() : DefaultTopic));
         }
 
         return questions;
+    }
+
+    public static string Format(IEnumerable<TenseQuestion> questions)
+    {
+        return VocabularyRepository.FormatCsv(Header, questions.Select(question => new[]
+        {
+            question.Subject,
+            question.VerbBase,
+            question.CorrectForm,
+            VocabularyRepository.JoinAlternatives(question.Distractors),
+            question.Hint == DefaultTopic ? "" : question.Hint
+        }));
     }
 }

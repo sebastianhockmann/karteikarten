@@ -9,7 +9,8 @@ Kind-Konto freigeschaltet. Lernsprache pro Konto: **Englisch** oder **Spanisch**
 | Was | Wo gepflegt | Wie kommt es auf die PCs |
 |---|---|---|
 | Programmversion | dieses Repo, Git-Tag `v1.2.3` | GitHub-Release → Aufgabe `EnglishSteamTrainer-Update` (beim Hochfahren + alle 6 h) |
-| Vokabeln, Grammatik, unregelmäßige Verben | `content/<sprache>/*.csv` im Repo | Watchdog lädt alle 30 Min. von GitHub in einen Cache |
+| Vokabeln, Grammatik, unregelmäßige Verben, Themen | [Pflege-Oberfläche](https://sebastianhockmann.github.io/karteikarten/) oder `content/<sprache>/*.csv` im Repo | Watchdog lädt alle 30 Min. von GitHub in einen Cache |
+| Lernplan (welches Thema wann, pro Kind) | Pflege-Oberfläche oder `content/plan.json` | wie Vokabeln |
 | Gesperrte Programme, Anzahl Aufgaben | `content/config.json` im Repo | wie Vokabeln |
 | Konto → Sprache (zentral, hat Vorrang) | `content/config.json` → `users` | wie Vokabeln |
 | Welche Konten gesperrt sind, Sprache als Rückfall | `settings.json` auf dem PC | `scripts\Install.ps1` |
@@ -54,9 +55,10 @@ Updater ein. Ohne Rückfragen:
 Das Kind muss ein **Standardkonto** (kein Admin) haben – sonst kann es den
 Watchdog beenden.
 
-## Inhalte pflegen (vom Entwickler-PC oder auf GitHub)
+## Inhalte pflegen
 
-Alles in `content/` ist zentral für alle PCs. Entweder direkt auf GitHub
+Alles in `content/` ist zentral für alle PCs. Am bequemsten über die
+**Pflege-Oberfläche** (nächster Abschnitt). Alternativ direkt auf GitHub
 bearbeiten (Stift-Symbol) oder auf dem Entwickler-PC:
 
 ```powershell
@@ -69,11 +71,49 @@ git push origin main
 
 Ein neues Release ist dafür **nicht** nötig.
 
+## Pflege-Oberfläche (Vokabeln, Themen, Lernplan im Browser)
+
+**https://sebastianhockmann.github.io/karteikarten/** – läuft komplett im
+Browser (auch auf Tablet/Handy), ohne Server. Gespeichert wird direkt als
+Commit auf `main`, die PCs holen sich die Änderung wie gewohnt.
+
+- **Vokabeln:** suchen, nach Thema filtern, bearbeiten, mehrere Wörter auf
+  einmal einem Thema zuordnen, Wortlisten einfügen (`perro;Hund`, auch aus
+  Excel kopiert). Wird ein Wort umbenannt, bleibt sein Lernverlauf erhalten
+  (Spalte `Id`, siehe Format).
+- **Grammatik**, **Unregelmäßige Verben:** bearbeiten, Themen vergeben.
+- **Themen:** Übersicht mit Anzahl je Art und Lernplan-Zeiträumen,
+  umbenennen (auch zusammenführen) und entfernen.
+- **Lernplan:** Wochenkalender pro Kind; Themen auf eine Woche ziehen,
+  Einträge verschieben, Zeitraum/Kinder/Titel bearbeiten.
+- **Vorschau:** zeigt für ein Kind und einen Tag, welche Aufgaben in welcher
+  Reihenfolge kämen (gleiche Logik wie die Lern-App).
+- **Berichte:** die Fortschrittsberichte aus dem Branch `berichte`.
+
+Vor dem Speichern prüft die Seite alles mit denselben Regeln wie CI (Spalten,
+Pflichtfelder, Duplikate, `;`/`|` in Werten, Themen im Lernplan ohne
+Aufgaben). Bei Fehlern ist Speichern gesperrt, Hinweise (z. B. Überschneidung
+im Plan) stehen auf der Übersicht. Hat inzwischen jemand anderes auf `main`
+gepusht, wird nichts überschrieben – dann neu laden und erneut eintragen.
+
+**Anmelden:** Fine-grained Personal Access Token
+([anlegen](https://github.com/settings/personal-access-tokens/new)), *Only
+select repositories* → `karteikarten`, *Contents: Read and write*. Das Token
+bleibt nur im Browser dieses Geräts (localStorage); „Abmelden“ löscht es. Es
+ist ein eigenes Token, nicht das der Kind-PCs. **Ohne Anmeldung ansehen
+(Demo)** zeigt den Stand der letzten Veröffentlichung, Speichern ist dort gesperrt.
+
+**Einmalig einrichten:** Repo → Settings → Pages → *Source: GitHub Actions*.
+Danach veröffentlicht die Action **Pflege-Oberfläche**
+(`.github/workflows/admin.yml`) die Seite bei jeder Änderung an
+`src/EnglishSteamTrainer.Admin`, `src/EnglishSteamTrainer.Content` oder `content/`.
+Lokal starten: `dotnet run --project src/EnglishSteamTrainer.Admin`.
+
 ## Wann holen sich die PCs was?
 
 | Was | Wer prüft | Wann | Wirksam |
 |---|---|---|---|
-| `content/` (Vokabeln, Grammatik, Sperrliste, Sprachzuordnung) | Watchdog (SYSTEM) | beim Start und alle 30 Minuten | Sperrliste nach ≤ 15 s; Vokabeln und Sprache beim nächsten Start der Lern-App (= nächste Anmeldung) |
+| `content/` (Vokabeln, Grammatik, Lernplan, Sperrliste, Sprachzuordnung) | Watchdog (SYSTEM) | beim Start und alle 30 Minuten | Sperrliste nach ≤ 15 s; Vokabeln und Sprache beim nächsten Start der Lern-App (= nächste Anmeldung) |
 | Neue Programmversion (Release) | Aufgabe `EnglishSteamTrainer-Update` | 3 Min. nach dem Hochfahren, danach alle 6 Stunden | sofort; offene Lern-App wird neu gestartet |
 
 GitHub liefert geänderte Dateien bis zu ~5 Minuten verzögert aus (Cache).
@@ -124,16 +164,20 @@ In `content/config.json`:
 `content/<sprache>/vocabulary.csv` – Trennzeichen `;`, Alternativen mit `|`:
 
 ```
-Word;German;Hint;GermanAlternatives;WordAlternatives;Topics
+Word;German;Hint;GermanAlternatives;WordAlternatives;Topics;Id
 perro;Hund;Bellt und wedelt mit dem Schwanz;;;Tiere
 coche;Auto;Hat vier Räder;Wagen;carro;Zuhause & Schule
 queso;Käse;Wird aus Milch gemacht;;;Essen|Party-Essen
+bunny;Hase;Hat lange Ohren;;;Tiere;rabbit
 ```
 
 `Topics` (optional, mehrere mit `|`) ordnet ein Wort Themen zu, siehe
-„Thema der Woche“.
+„Lernplan“. `Id` bleibt normalerweise leer. Nur wenn ein Wort umbenannt wird,
+steht dort der alte Text – unter dem führt das Lernjournal das Wort weiter
+(Karteikasten, Wiederholungen). Die Pflege-Oberfläche setzt das automatisch.
 
-`content/<sprache>/grammar.csv` – genau **drei** falsche Antworten:
+`content/<sprache>/grammar.csv` – genau **drei** falsche Antworten. `Topic`
+wird bei der Frage angezeigt und ist zugleich das Thema im Lernplan:
 
 ```
 Subject;Verb;Correct;Distractors;Topic
@@ -144,10 +188,12 @@ yo;hablar;hablo;hablas|habla|hablamos;Presente
 Schreibweisen mit `|`, die erste wird angezeigt:
 
 ```
-Infinitive;SimplePast;PastParticiple;German
+Infinitive;SimplePast;PastParticiple;German;Topics
 be;was|were;been;sein
-get;got;got|gotten;bekommen
+get;got;got|gotten;bekommen;Unit 3
 ```
+
+`Topics` ist optional (mehrere mit `|`), wie bei den Vokabeln.
 
 Abgefragt wird: eine der drei Formen und die deutsche Bedeutung sind
 vorgegeben, die anderen beiden Formen tippt das Kind ein. Nur wenn beide
@@ -162,33 +208,68 @@ Tippfehler wird erst ab 5 Buchstaben verziehen (gibt dann weniger Punkte).
 Nach jedem Push prüft die GitHub-Action **CI** alle Dateien in `content/`
 (Spaltenzahl, Duplikate, Pflichtfelder). Roter Haken = Datei prüfen.
 
-## Thema der Woche
+## Lernplan
 
-In `content/config.json` legt `focusTopics` fest, welches Thema in welchem
-Zeitraum geübt wird:
+`content/plan.json` legt fest, welche Themen wann dran sind – für alle
+Kinder, eine Sprache oder einzelne Kinder (am einfachsten in der
+Pflege-Oberfläche unter „Lernplan“):
 
 ```json
-"focusSharePercent": 70,
-"focusTopics": [
-  { "from": "2026-11-02", "to": "2026-11-08", "language": "es", "topic": "Party-Essen" },
-  { "from": "2026-11-09", "to": "2026-11-15", "topic": "Tiere" }
-]
+{
+  "holdBackPlannedTopics": true,
+  "schedule": [
+    { "from": "2026-11-02", "to": "2026-11-08", "language": "es", "topics": [ "Party-Essen" ] },
+    { "from": "2026-11-09", "to": "2026-11-15", "accounts": [ "tiago" ], "title": "Unit 3", "topics": [ "Schule", "Present Progressive" ] }
+  ]
+}
 ```
 
 - `from`/`to`: erster und letzter Tag (einschließlich), Format `JJJJ-MM-TT`.
-- `topic`: muss genau so (Groß-/Kleinschreibung egal) in der Spalte `Topics` der
-  Vokabeln stehen. CI prüft, dass es zu jedem Thema Vokabeln gibt.
-- `language`: `en` oder `es`. Fehlt sie, gilt das Thema für beide Sprachen. Gibt es
-  für denselben Tag einen Eintrag mit und einen ohne Sprache, gewinnt der mit Sprache.
-- `focusSharePercent` (1–100, Standard 70): So viele Prozent der Vokabeln kommen
-  aus dem Thema, bis alle Wörter des Themas einmal dran waren. Danach geht es mit
-  den übrigen Wörtern weiter. Grammatik und Verben laufen unverändert mit. Falsch
-  beantwortete Wörter kommen weiterhin zuerst.
-- Die App zeigt oben „🎯 Thema der Woche: …“ und markiert die Wörter zum Thema.
-- Vorhandene Themen: Tiere, Familie, Essen, Party-Essen, Zahlen, Farben sowie
-  Spanisch: Zuhause & Schule, Eigenschaften, Natur & Zeit, Verben, Begrüßung,
-  Englisch: Schule, Wochentage.
-- Ältere Programmversionen (vor 1.3.0) ignorieren Themen und üben alle Wörter gemischt.
+- `topics`: ein oder mehrere Themen. Zählen tun Vokabeln (Spalte `Topics`),
+  Grammatik (Spalte `Topic`) und Verben (Spalte `Topics`); Groß-/Kleinschreibung
+  egal. CI und Oberfläche prüfen, dass es zu jedem Thema Aufgaben gibt.
+- `language` (`en`/`es`) und `accounts` (Windows-Kontonamen) sind optional.
+  Fehlen beide, gilt der Eintrag für alle Kinder.
+- `title` (optional) wird in der App statt der Themenliste angezeigt.
+- Gelten an einem Tag mehrere Einträge, gewinnt der für ein Kind vor dem für
+  eine Sprache vor dem für alle, sonst der erste in der Datei.
+- Im Zeitraum eines Eintrags kommen `focusSharePercent` (config.json, 1–100,
+  Standard 70) Prozent der neuen und fälligen Aufgaben aus seinen Themen. Die
+  App zeigt oben „🎯 Thema der Woche: …“ und markiert die Aufgaben dazu.
+- `holdBackPlannedTopics` (Standard `true`): Themen, die erst **später** im
+  Plan stehen, werden vorher nicht abgefragt. So kann man den Wortschatz für
+  das ganze Schuljahr schon eintragen. Themen, die gar nicht im Plan stehen,
+  und Aufgaben ohne Thema sind immer dabei. Hat eine Aufgabe mehrere Themen,
+  reicht ein begonnenes oder ungeplantes, damit sie dabei ist.
+- `focusTopics` in `config.json` (Version 1.3) gilt weiterhin, neue Einträge
+  gehören in `plan.json`.
+- Ältere Programmversionen (vor 1.4.0) lesen `plan.json` nicht und üben alles gemischt.
+
+## Karteikasten (Wiederholung)
+
+Welche Aufgabe wann wiederkommt, berechnet die App aus dem Lernjournal
+(Leitner-Prinzip, je Vokabel, Grammatik-Frage und Verb):
+
+| Fach | wieder fällig nach |
+|---|---|
+| 1 | 1 Tag |
+| 2 | 3 Tagen |
+| 3 | 7 Tagen |
+| 4 | 14 Tagen |
+| 5 | 30 Tagen |
+
+- Richtig, als die Karte fällig (oder neu) war → ein Fach weiter. Tippfehler →
+  bleibt im Fach. Falsch → Fach 1, kommt bei der nächsten Runde zuerst.
+- Eine Karte, die nicht fällig war, als Lückenfüller richtig zu beantworten,
+  ändert nichts – so springt keine Karte an einem Tag mehrere Fächer weiter.
+- Reihenfolge einer Runde: zuletzt falsch beantwortete Aufgaben → fällige
+  Wiederholungen und neue Aufgaben (davon der Anteil aus dem Lernplan-Thema
+  zuerst, Grammatik und Verben dazwischen) → übrige Vokabeln als Lückenfüller,
+  die am frühesten fälligen zuerst.
+- Ab Fach 3 gilt eine Aufgabe als „sicher“ – der Fortschrittsbericht zeigt
+  das je Lernplan-Thema.
+- Es braucht keine Umstellung: Die Fächer ergeben sich aus dem vorhandenen
+  Lernjournal.
 
 ## Testmodus (Entwickler / Eltern)
 
@@ -261,7 +342,9 @@ Das Repo ist **öffentlich**, die Berichte (PC-Name, Kontoname, Lerntage) kann
 also jeder lesen. `main`, CI und Releases bleiben davon unberührt.
 GitHub zeigt darin eine Grafik der richtigen Antworten pro Tag (letzte 30 Tage,
 Linie = Tagesziel) und eine Tabelle mit richtig/falsch/Tagesziel je Tag. Tage
-ohne Antworten stehen als „nicht gelernt“ drin. Hochgeladen wird nur, wenn sich
+ohne Antworten stehen als „nicht gelernt“ drin. Darunter steht je
+Lernplan-Thema (letzte 3 Monate und nächste 4 Wochen), wie viele Aufgaben schon
+geübt und wie viele „sicher“ sind (Karteikasten-Fach 3+). Hochgeladen wird nur, wenn sich
 etwas geändert hat (neue Antworten oder ein neuer Tag), also höchstens alle 30
 Minuten. Der Verlauf des Repos zeigt daher auch, wann der PC zuletzt online war.
 
@@ -306,8 +389,13 @@ Schritt 3 wiederholen. **Ausschalten:** `report-upload.json` löschen.
 ## Projekte
 
 - `src/EnglishSteamTrainer.UI` – die Lern-App (WPF).
-- `src/EnglishSteamTrainer.Core` – Logik: Inhalte laden/abgleichen,
-  Antwortprüfung, Lernjournal, XP-Regeln, Freischaltung, Programmsperre.
+- `src/EnglishSteamTrainer.Content` – plattformunabhängig (auch im Browser):
+  Inhalte lesen/schreiben/prüfen, Lernplan, Karteikasten, Zusammenstellung
+  der Aufgaben (`QuizPlanner`), Antwortprüfung, XP-Regeln.
+- `src/EnglishSteamTrainer.Core` – Windows-Teil: Inhalte laden/abgleichen,
+  Lernjournal, Freischaltung, Programmsperre, Berichte.
+- `src/EnglishSteamTrainer.Admin` – Pflege-Oberfläche (Blazor WebAssembly,
+  GitHub Pages).
 - `src/EnglishSteamTrainer.Watchdog` – läuft als SYSTEM, beendet gesperrte
   Programme der eingetragenen Konten (jede Sekunde) und lädt Online-Inhalte.
 - `tests/EnglishSteamTrainer.Core.Tests` – Unit-Tests inkl. Prüfung von `content/`.

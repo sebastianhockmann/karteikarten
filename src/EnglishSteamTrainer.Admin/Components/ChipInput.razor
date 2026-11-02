@@ -1,0 +1,53 @@
+@* Liste von Werten (Themen, Alternativen) als Chips: Enter fügt hinzu, × entfernt. *@
+<div class="chipinput">
+    @foreach (var value in Values)
+    {
+        <span class="chip @ChipClass">@value <button type="button" title="Entfernen" @onclick="() => Remove(value)">×</button></span>
+    }
+    <input list="@_listId" placeholder="@Placeholder" @bind="_text" @bind:event="oninput" @onkeydown="OnKeyDown" @onblur="Add" />
+    @if (Suggestions is not null)
+    {
+        <datalist id="@_listId">
+            @foreach (var suggestion in Suggestions.Where(s => !Values.Contains(s, StringComparer.OrdinalIgnoreCase)))
+            {
+                <option value="@suggestion"></option>
+            }
+        </datalist>
+    }
+</div>
+
+@code {
+    private readonly string _listId = "chips-" + Guid.NewGuid().ToString("N");
+    private string _text = "";
+
+    [Parameter] public List<string> Values { get; set; } = [];
+    [Parameter] public EventCallback<List<string>> ValuesChanged { get; set; }
+    [Parameter] public IEnumerable<string>? Suggestions { get; set; }
+    [Parameter] public string Placeholder { get; set; } = "hinzufügen …";
+    [Parameter] public string ChipClass { get; set; } = "";
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            await Add();
+        else if (e.Key == "Backspace" && _text.Length == 0 && Values.Count > 0)
+            await Remove(Values[^1]);
+    }
+
+    private async Task Add()
+    {
+        var value = _text.Trim();
+        _text = "";
+
+        if (value.Length == 0 || Values.Contains(value, StringComparer.OrdinalIgnoreCase))
+            return;
+
+        // Gleiche Schreibweise wie ein vorhandenes Thema übernehmen.
+        value = Suggestions?.FirstOrDefault(s => string.Equals(s, value, StringComparison.OrdinalIgnoreCase)) ?? value;
+
+        await ValuesChanged.InvokeAsync([.. Values, value]);
+    }
+
+    private Task Remove(string value) =>
+        ValuesChanged.InvokeAsync(Values.Where(v => v != value).ToList());
+}

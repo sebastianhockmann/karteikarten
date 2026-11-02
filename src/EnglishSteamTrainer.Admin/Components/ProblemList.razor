@@ -1,0 +1,38 @@
+@if (Problems.Count > 0)
+{
+    var errors = Problems.Where(p => p.Severity == ProblemSeverity.Error).ToList();
+    var warnings = Problems.Where(p => p.Severity == ProblemSeverity.Warning).ToList();
+
+    @if (errors.Count > 0)
+    {
+        <div class="notice error">
+            <b>@errors.Count @(errors.Count == 1 ? "Fehler" : "Fehler") – so kann nicht gespeichert werden:</b>
+            <ul>
+                @foreach (var problem in errors.Take(Max))
+                {
+                    <li><span class="muted small">@problem.File:</span> @problem.Message</li>
+                }
+            </ul>
+            @if (errors.Count > Max) { <div class="small">… und @(errors.Count - Max) weitere</div> }
+        </div>
+    }
+
+    @if (warnings.Count > 0)
+    {
+        <div class="notice warn">
+            <b>@warnings.Count @(warnings.Count == 1 ? "Hinweis" : "Hinweise"):</b>
+            <ul>
+                @foreach (var problem in warnings.Take(Max))
+                {
+                    <li><span class="small">@problem.File:</span> @problem.Message</li>
+                }
+            </ul>
+            @if (warnings.Count > Max) { <div class="small">… und @(warnings.Count - Max) weitere</div> }
+        </div>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public List<ContentProblem> Problems { get; set; } = [];
+    [Parameter] public int Max { get; set; } = 20;
+}

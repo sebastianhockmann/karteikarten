@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Plattformunabhängiger Teil: Inhalte lesen/schreiben/prüfen, Lernplan, Karteikasten und
+    Zusammenstellung der Aufgaben. Wird von der Lern-App (Windows) und von der
+    Pflege-Oberfläche im Browser (EnglishSteamTrainer.Admin) gleichermaßen genutzt.
+    Namespace bleibt EnglishSteamTrainer.Core, damit sich für die übrigen Projekte nichts ändert.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>EnglishSteamTrainer.Core</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="EnglishSteamTrainer.Core" />
+    <InternalsVisibleTo Include="EnglishSteamTrainer.Core.Tests" />
+  </ItemGroup>
+</Project>

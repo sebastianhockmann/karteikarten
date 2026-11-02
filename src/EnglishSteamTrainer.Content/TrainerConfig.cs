@@ -14,14 +14,11 @@ public sealed record UserSettings(
     int? RequiredCorrectAnswers = null);
 
 /// <summary>
-/// Thema der Woche: Vom <paramref name="From"/> bis einschließlich <paramref name="To"/>
-/// kommen Vokabeln mit diesem Thema (Spalte Topics) bevorzugt dran.
+/// Thema der Woche aus Version 1.3 (config.json "focusTopics"). Gilt weiter, neue Einträge
+/// gehören in den <see cref="LearningPlan"/> (plan.json).
 /// </summary>
 /// <param name="Language">Optional, sonst für alle Sprachen.</param>
-public sealed record FocusTopic(DateOnly From, DateOnly To, string Topic, string? Language = null)
-{
-    public bool IsActive(DateOnly date) => From <= date && date <= To;
-}
+public sealed record FocusTopic(DateOnly From, DateOnly To, string Topic, string? Language = null);
 
 /// <summary>
 /// Zentrale Einstellungen für alle PCs (content/config.json im GitHub-Repo).
@@ -42,20 +39,8 @@ public sealed class TrainerConfig
 
     public List<FocusTopic> FocusTopics { get; set; } = [];
 
-    /// <summary>Anteil der Vokabeln aus dem Thema der Woche, solange davon noch welche übrig sind.</summary>
+    /// <summary>Anteil der neuen und fälligen Aufgaben aus den Themen, die laut Lernplan gerade dran sind.</summary>
     public int FocusSharePercent { get; set; } = 70;
-
-    /// <summary>
-    /// Ein Eintrag für genau diese Sprache gewinnt vor einem für alle Sprachen,
-    /// sonst der erste passende in der Liste.
-    /// </summary>
-    public FocusTopic? FindFocusTopic(LearningLanguage language, DateOnly date)
-    {
-        var active = FocusTopics.Where(focus => focus.IsActive(date)).ToList();
-
-        return active.FirstOrDefault(focus => Languages.Find(focus.Language) == language)
-               ?? active.FirstOrDefault(focus => string.IsNullOrWhiteSpace(focus.Language));
-    }
 
     public LearningLanguage? FindLanguage(string computer, string account)
     {
@@ -115,7 +100,7 @@ public sealed class TrainerConfig
     {
         try
         {
-            var config = JsonSerializer.Deserialize<TrainerConfig>(json, InstallSettings.JsonOptions);
+            var config = JsonSerializer.Deserialize<TrainerConfig>(json, ContentJson.Options);
 
             if (config?.BlockedApps is null)
                 return null;

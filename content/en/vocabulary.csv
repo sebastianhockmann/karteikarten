@@ -1,4 +1,4 @@
-Word;German;Hint;GermanAlternatives;WordAlternatives;Topics
+Word;German;Hint;GermanAlternatives;WordAlternatives;Topics;Id
 apple;Apfel;Obst, rot oder grün;;;Essen
 banana;Banane;Gelbes, krummes Obst;;;Essen
 dog;Hund;Bellt und wedelt mit dem Schwanz;;;Tiere
@@ -46,8 +46,8 @@ red;rot;Farbe von Erdbeeren;;;Farben
 blue;blau;Farbe vom Himmel;;;Farben
 green;grün;Farbe von Gras;;;Farben
 yellow;gelb;Farbe von der Sonne;;;Farben
-happy;glücklich;Gegenteil von traurig;fröhlich|froh;;
-night;Nacht;Dunkle Tageszeit;;;
+happy;glücklich;Gegenteil von traurig;fröhlich|froh
+night;Nacht;Dunkle Tageszeit
 garlic;Knoblauch;Riecht sehr stark, Vampire mögen ihn nicht;;;Party-Essen
 lettuce;Kopfsalat;Grüne Blätter, daraus macht man Salat;Salat;;Party-Essen
 tomato;Tomate;Rotes Gemüse für Salat und Soße;;;Party-Essen

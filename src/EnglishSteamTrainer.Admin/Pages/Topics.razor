@@ -1,0 +1,159 @@
+@page "/themen"
+@inherits ContentPage
+@inject IJSRuntime JS
+
+<PageTitle>Themen – Karteikarten</PageTitle>
+
+<h1>Themen</h1>
+
+<RequireLoaded>
+    @{
+        var content = Set[_language];
+        var topics = content.Topics.Order(StringComparer.OrdinalIgnoreCase).ToList();
+        var today = Dates.Today;
+    }
+
+    <LanguageTabs Value="_language" ValueChanged="l => _language = l" />
+
+    <p class="small muted">
+        Ein Thema entsteht, sobald eine Vokabel, Grammatik-Frage oder ein Verb es bekommt. Themen, die nicht im Lernplan stehen,
+        werden immer mit abgefragt; geplante Themen erst ab ihrem Zeitraum. Umbenennen gilt für alle Sprachen und den Lernplan –
+        auf einen vorhandenen Namen umbenennen führt zwei Themen zusammen.
+    </p>
+
+    <table class="data">
+        <thead>
+            <tr><th>Thema</th><th class="num">Vokabeln</th><th class="num">Grammatik</th><th class="num">Verben</th><th>Im Lernplan</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var topic in topics)
+            {
+                var entries = Set.Plan.Schedule
+                    .Where(e => e.HasTopic(topic) && (string.IsNullOrWhiteSpace(e.Language) || Languages.Find(e.Language) == _language))
+                    .OrderBy(e => e.From)
+                    .ToList();
+
+                <tr>
+                    <td>
+                        @if (_renaming == topic)
+                        {
+                            <div class="row">
+                                <input @bind="_newName" @bind:event="oninput" @onkeydown="e => RenameOnEnter(e, topic)" />
+                                <button class="primary" disabled="@(!CanRename(topic))" @onclick="() => Rename(topic)">OK</button>
+                                <button @onclick="() => _renaming = null">Abbrechen</button>
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="chip topic">@topic</span>
+                        }
+                    </td>
+                    <td class="num"><a href="vokabeln?sprache=@_language.Code&thema=@Uri.EscapeDataString(topic)">@content.Vocabulary.Count(c => c.HasTopic(topic))</a></td>
+                    <td class="num"><a href="grammatik?sprache=@_language.Code&thema=@Uri.EscapeDataString(topic)">@content.Grammar.Count(q => q.HasTopic(topic))</a></td>
+                    <td class="num">@(_language.HasVerbForms ? content.Verbs.Count(v => v.HasTopic(topic)).ToString() : "–")</td>
+                    <td>
+                        @if (entries.Count == 0)
+                        {
+                            <span class="muted small">nicht geplant – immer dabei</span>
+                        }
+                        @foreach (var entry in entries)
+                        {
+                            <span class="chip @(entry.IsActive(today) ? "focus" : entry.From > today ? "later" : "")" title="@Who(entry)">
+                                @Dates.Range(entry.From, entry.To) @(entry.Accounts is { Count: > 0 } ? "· " + string.Join(", ", entry.Accounts) : "")
+                            </span>
+                        }
+                    </td>
+                    <td class="nowrap right">
+                        <button class="link" @onclick="() => { _renaming = topic; _newName = topic; }">Umbenennen</button>
+                        <button class="link danger" @onclick="() => Delete(topic)">Entfernen</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (topics.Count == 0)
+    {
+        <p class="muted">Noch keine Themen. Auf der Seite <a href="vokabeln">Vokabeln</a> Wörter auswählen und „Thema hinzufügen“.</p>
+    }
+</RequireLoaded>
+
+@code {
+    private LearningLanguage _language = Languages.English;
+    private string? _renaming;
+    private string _newName = "";
+
+    [SupplyParameterFromQuery(Name = "sprache")] public string? LanguageCode { get; set; }
+
+    protected override void OnParametersSet() => _language = Languages.Find(LanguageCode) ?? _language;
+
+    private static string Who(PlanEntry entry) =>
+        (entry.Accounts is { Count: > 0 } ? string.Join(", ", entry.Accounts) : "alle Kinder") +
+        (string.IsNullOrWhiteSpace(entry.Language) ? "" : $" ({entry.Language})");
+
+    private bool CanRename(string topic) =>
+        !string.IsNullOrWhiteSpace(_newName) && _newName.IndexOfAny([';', '|']) < 0 && _newName.Trim() != topic;
+
+    private void RenameOnEnter(KeyboardEventArgs e, string topic)
+    {
+        if (e.Key == "Enter")
+            Rename(topic);
+    }
+
+    private void Rename(string topic)
+    {
+        if (!CanRename(topic))
+            return;
+
+        var name = _newName.Trim();
+
+        List<string>? Replace(List<string>? topics) =>
+            topics?.Select(t => TopicNames.Same(t, topic) ? name : t).Distinct(TopicNames.Comparer).ToList();
+
+        foreach (var content in Set.Languages.Values)
+        {
+            for (var i = 0; i < content.Vocabulary.Count; i++)
+                if (content.Vocabulary[i].HasTopic(topic)) content.Vocabulary[i] = content.Vocabulary[i] with { Topics = Replace(content.Vocabulary[i].Topics) };
+
+            for (var i = 0; i < content.Grammar.Count; i++)
+                if (content.Grammar[i].HasTopic(topic)) content.Grammar[i] = content.Grammar[i] with { Hint = name };
+
+            for (var i = 0; i < content.Verbs.Count; i++)
+                if (content.Verbs[i].HasTopic(topic)) content.Verbs[i] = content.Verbs[i] with { Topics = Replace(content.Verbs[i].Topics) };
+        }
+
+        var schedule = Set.Plan.Schedule;
+
+        for (var i = 0; i < schedule.Count; i++)
+            if (schedule[i].HasTopic(topic)) schedule[i] = schedule[i] with { Topics = Replace(schedule[i].Topics)! };
+
+        _renaming = null;
+        Changed();
+    }
+
+    private async Task Delete(string topic)
+    {
+        var planned = Set.Plan.Schedule.Any(e => e.HasTopic(topic));
+        var message = $"Thema „{topic}“ bei allen {_language.Name}-Aufgaben entfernen? Die Aufgaben selbst bleiben erhalten." +
+                      (planned ? "\n\nAchtung: Das Thema steht im Lernplan – den Eintrag danach dort anpassen." : "");
+
+        if (!await JS.InvokeAsync<bool>("confirm", message))
+            return;
+
+        var content = Set[_language];
+
+        for (var i = 0; i < content.Vocabulary.Count; i++)
+            if (content.Vocabulary[i].HasTopic(topic))
+                content.Vocabulary[i] = content.Vocabulary[i] with { Topics = content.Vocabulary[i].Topics!.Where(t => !TopicNames.Same(t, topic)).ToList() };
+
+        for (var i = 0; i < content.Grammar.Count; i++)
+            if (content.Grammar[i].HasTopic(topic))
+                content.Grammar[i] = content.Grammar[i] with { Hint = TenseQuestionRepository.DefaultTopic };
+
+        for (var i = 0; i < content.Verbs.Count; i++)
+            if (content.Verbs[i].HasTopic(topic))
+                content.Verbs[i] = content.Verbs[i] with { Topics = content.Verbs[i].Topics!.Where(t => !TopicNames.Same(t, topic)).ToList() };
+
+        Changed();
+    }
+}
