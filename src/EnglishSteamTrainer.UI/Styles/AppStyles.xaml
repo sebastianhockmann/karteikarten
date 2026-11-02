@@ -109,6 +109,12 @@
     </Style>
 
     <!-- Maskottchen-Animationen -->
+    <Style x:Key="MotifDecorationStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="72"/>
+        <Setter Property="Opacity" Value="0.3"/>
+        <Setter Property="IsHitTestVisible" Value="False"/>
+    </Style>
+
     <Storyboard x:Key="MascotHappyBounce">
         <DoubleAnimation Storyboard.TargetName="MascotScale"
                           Storyboard.TargetProperty="ScaleX"

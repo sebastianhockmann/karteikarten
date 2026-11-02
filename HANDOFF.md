@@ -5,7 +5,7 @@ was nicht offensichtlich ist.
 
 ## Status
 
-Zuletzt veröffentlicht: **v1.4.0** (2026-11-02).
+Zuletzt veröffentlicht: **v1.4.1** (2026-11-02).
 
 ### Verben im Lernplan (für 1.4.1, 2026-11-02)
 
@@ -17,6 +17,16 @@ Zuletzt veröffentlicht: **v1.4.0** (2026-11-02).
   laufen im Themenanteil mit den Themenvokabeln. Wirkt erst mit Release 1.4.1.
 - Oberfläche: Verben-Seite mit Themenfilter und Mehrfachauswahl („Thema
   hinzufügen/entfernen“), Lernplan-Palette weist auf Verben ohne Thema hin.
+
+### Motiv der Woche (für 1.4.1, 2026-11-02)
+
+`Motifs` (Content): 16 Wochenmotive reihum ab Montag 05.01.2026, Vorrang für
+Feiertagsmotive (Ostern per Osterformel). `MainWindow.ApplyMotif` setzt
+Fensterhintergrund, Kopfzeile, Maskottchen (vorher fest 🦉) und vier
+Deko-Emojis in den Kartenecken. Da WPF Emojis einfarbig zeichnet, werden
+Maskottchen und Deko in der Kopfzeilenfarbe eingefärbt. Alle Emojis einmal
+mit WPF gerendert: nur 🪐 fehlte (ersetzt durch 🌍). Entwicklermodus hat eine
+Motiv-Vorschau. Kommt erst mit einem Release bei den Kindern an.
 
 ### Entwicklermodus: „Lernen als“ (für 1.4.1, 2026-11-02)
 

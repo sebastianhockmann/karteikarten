@@ -78,6 +78,7 @@ public partial class MainWindow : Window
         RefreshCorrectToday();
         BuildQuizQueue();
         ApplyLanguageAndConfig();
+        ApplyMotif(Motifs.For(DateOnly.FromDateTime(DateTime.Now)));
 
         UpdateUi();
 
@@ -121,6 +122,7 @@ public partial class MainWindow : Window
                 (_test.Only is null ? "" : $" Nur Aufgaben: {_test.Only}.");
 
             ShowLearnerChoice();
+            ShowMotifChoice();
         }
 
         if (FocusEntry is not null)
@@ -169,6 +171,48 @@ public partial class MainWindow : Window
             return;
 
         ((App)Application.Current).SwitchLearner(_test, choice.Account);
+    }
+
+    // Motiv der Woche bzw. des Feiertags (siehe Motifs): Maskottchen, Deko, Farben.
+    private void ApplyMotif(Motif motif)
+    {
+        // WPF zeigt Emojis nur einfarbig - deshalb Maskottchen und Deko in der Motivfarbe.
+        var color = MotifBrush(motif.HeaderColor);
+
+        Background = MotifBrush(motif.BackgroundColor);
+        HeaderBox.Background = color;
+        MascotText.Text = motif.Mascot;
+        MascotText.Foreground = color;
+        MotifText.Text = $"{motif.Mascot} Motiv der Woche: {motif.Name} – {motif.Greeting}";
+
+        TextBlock[] decorations = [DecorationTopLeft, DecorationTopRight, DecorationBottomLeft, DecorationBottomRight];
+
+        for (var i = 0; i < decorations.Length; i++)
+        {
+            decorations[i].Text = motif.Decorations.Length == 0 ? "" : motif.Decorations[i % motif.Decorations.Length];
+            decorations[i].Foreground = color;
+        }
+    }
+
+    private static Brush MotifBrush(string color) =>
+        new SolidColorBrush((Color)ColorConverter.ConvertFromString(color));
+
+    // Entwicklermodus: alle Motive ansehen, ohne auf die Woche zu warten.
+    private void ShowMotifChoice()
+    {
+        var current = Motifs.For(DateOnly.FromDateTime(DateTime.Now));
+        var choices = new List<MotifChoice> { new(current, $"Aktuell ({current.Name})") };
+        choices.AddRange(Motifs.All.Select(motif => new MotifChoice(motif, $"{motif.Mascot} {motif.Name}")));
+
+        MotifBox.ItemsSource = choices;
+        MotifBox.SelectedIndex = 0;
+        MotifPanel.Visibility = Visibility.Visible;
+    }
+
+    private void MotifBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (MotifBox.SelectedItem is MotifChoice choice)
+            ApplyMotif(choice.Motif);
     }
 
     private string FocusTopicText =>
@@ -840,3 +884,6 @@ public partial class MainWindow : Window
 
 /// <summary>Eintrag in der Auswahl "Lernen als" (Account null = eigenes Konto).</summary>
 public sealed record LearnerChoice(string? Account, string Label);
+
+/// <summary>Eintrag in der Motiv-Vorschau (Entwicklermodus).</summary>
+public sealed record MotifChoice(Motif Motif, string Label);

@@ -276,6 +276,21 @@ Welche Aufgabe wann wiederkommt, berechnet die App aus dem Lernjournal
 - Es braucht keine Umstellung: Die Fächer ergeben sich aus dem vorhandenen
   Lernjournal.
 
+## Motiv der Woche
+
+Wie bei den Google-Doodles sieht die App jede Woche (Montag bis Sonntag)
+anders aus: Maskottchen, Deko in den Ecken, Farben und ein Spruch in der
+Kopfzeile. 16 Motive wechseln reihum (Weltraum, Ozean, Dinosaurier, …), an
+Feiertagen gibt es Sondermotive: Neujahr (28.12.–4.1.), Fasching
+(Weiberfastnacht bis Aschermittwoch), Ostern (Palmsonntag bis Ostermontag),
+Halloween (25.10.–1.11.), Advent (1.–17.12.) und Weihnachten (18.–27.12.).
+Alle Kinder sehen in derselben Woche dasselbe Motiv.
+
+Die Motive stehen in `src/EnglishSteamTrainer.Content/WeeklyMotif.cs`, neue
+kommen also mit einem Release. WPF zeigt Emojis nur einfarbig und kennt
+nicht alle neueren – neue Motive deshalb im Entwicklermodus über „Motiv“
+ansehen.
+
 ## Entwicklermodus (Entwickler / Eltern)
 
 Gilt **automatisch** für jedes Konto, das nicht gesperrt ist – also auf
@@ -298,6 +313,7 @@ dotnet run --project src/EnglishSteamTrainer.UI -- --only verbs --language es
   `config.json` (`users`) – mit dessen Sprache, Lernplan/Thema der Woche und
   Anzahl Aufgaben. Jeder Wechsel startet mit einem frischen Wegwerf-Journal.
   Gleich beim Start: `--als tiago`.
+- **„Motiv“** (Auswahl darunter): alle Motive der Woche ansehen (siehe unten).
 - `--language es`: andere Sprache. `--only vocab|grammar|verbs`: nur eine Art
   von Aufgaben. `--test` ist weiterhin erlaubt, aber nicht mehr nötig.
 - **`--kindmodus`**: echtes Verhalten für das eigene Konto, z. B. um die Sperre

@@ -18,7 +18,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Border Background="#263238" CornerRadius="18" Padding="18">
+        <Border x:Name="HeaderBox" Background="#263238" CornerRadius="18" Padding="18">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
                     <TextBlock x:Name="LevelText" Foreground="#FFE082" FontSize="18" FontWeight="Bold" TextAlignment="Right"/>
@@ -44,10 +44,23 @@
                                   DisplayMemberPath="Label"
                                   SelectionChanged="LearnerBox_SelectionChanged"/>
                     </StackPanel>
+                    <StackPanel x:Name="MotifPanel"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Margin="0,6,0,0"
+                                Visibility="Collapsed">
+                        <TextBlock Text="🎨 Motiv:" Foreground="#FFE082" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <ComboBox x:Name="MotifBox"
+                                  MinWidth="170"
+                                  FontSize="13"
+                                  DisplayMemberPath="Label"
+                                  SelectionChanged="MotifBox_SelectionChanged"/>
+                    </StackPanel>
                 </StackPanel>
 
                 <StackPanel>
                     <TextBlock x:Name="TitleText" Text="🎮 English Steam Trainer" Foreground="White" FontSize="30" FontWeight="Bold"/>
+                    <TextBlock x:Name="MotifText" Foreground="#FFE082" FontSize="15" FontWeight="SemiBold" Margin="0,2,0,4"/>
                     <TextBlock x:Name="SubtitleText"
                                Foreground="#DDEEEE" FontSize="15"/>
                     <ItemsControl x:Name="HeaderAppsList"
@@ -76,6 +89,13 @@
         </Border>
 
         <Border Grid.Row="1" Margin="0,22,0,22" Background="White" CornerRadius="22" Padding="28">
+            <Grid>
+            <!-- Deko des Motivs in den Ecken, nur Hintergrund. -->
+            <TextBlock x:Name="DecorationTopLeft" Style="{StaticResource MotifDecorationStyle}" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+            <TextBlock x:Name="DecorationTopRight" Style="{StaticResource MotifDecorationStyle}" HorizontalAlignment="Right" VerticalAlignment="Top"/>
+            <TextBlock x:Name="DecorationBottomLeft" Style="{StaticResource MotifDecorationStyle}" HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
+            <TextBlock x:Name="DecorationBottomRight" Style="{StaticResource MotifDecorationStyle}" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+
             <StackPanel MaxWidth="680" HorizontalAlignment="Center" VerticalAlignment="Center">
 
                 <TextBlock x:Name="MascotText"
@@ -208,6 +228,7 @@
                     </StackPanel>
                 </Border>
             </StackPanel>
+            </Grid>
         </Border>
 
         <DockPanel Grid.Row="2">
