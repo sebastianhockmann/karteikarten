@@ -4,6 +4,8 @@
     <TargetFramework>net10.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
+    <!-- Erzeugt mit scripts/New-AppIcon.ps1. WPF-Fenster ohne eigenes Icon nehmen das der EXE. -->
+    <ApplicationIcon>app.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\EnglishSteamTrainer.Core\EnglishSteamTrainer.Core.csproj" />

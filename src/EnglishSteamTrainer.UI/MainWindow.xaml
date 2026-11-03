@@ -115,7 +115,7 @@
                     <TextBlock x:Name="VocabHeaderText" Text="Was heißt dieses Wort?" FontSize="18" Foreground="#546E7A" HorizontalAlignment="Center"/>
                     <TextBlock x:Name="WordText" Text="apple" FontSize="54" FontWeight="Bold" Margin="0,14,0,12" HorizontalAlignment="Center"/>
 
-                    <TextBox x:Name="AnswerBox" FontSize="40" Height="96" Padding="20,8,20,16"
+                    <TextBox x:Name="AnswerBox" FontSize="40" Height="96" Padding="20,0"
                              TextAlignment="Center"
                              TextOptions.TextFormattingMode="Display"
                              Style="{StaticResource RoundedTextBoxStyle}"
@@ -164,15 +164,15 @@
                         </Grid.RowDefinitions>
 
                         <TextBlock x:Name="VerbLabel1" Text="Infinitive" FontSize="20" FontWeight="SemiBold" Foreground="#455A64" VerticalAlignment="Center"/>
-                        <TextBox x:Name="VerbBox1" Grid.Column="1" FontSize="24" Height="52" Padding="14,2,14,6" Margin="0,4"
+                        <TextBox x:Name="VerbBox1" Grid.Column="1" FontSize="24" Height="52" Padding="14,0" Margin="0,4"
                                  TextAlignment="Center" Style="{StaticResource RoundedTextBoxStyle}" KeyDown="VerbBox_KeyDown"/>
 
                         <TextBlock x:Name="VerbLabel2" Grid.Row="1" Text="Simple Past" FontSize="20" FontWeight="SemiBold" Foreground="#455A64" VerticalAlignment="Center"/>
-                        <TextBox x:Name="VerbBox2" Grid.Row="1" Grid.Column="1" FontSize="24" Height="52" Padding="14,2,14,6" Margin="0,4"
+                        <TextBox x:Name="VerbBox2" Grid.Row="1" Grid.Column="1" FontSize="24" Height="52" Padding="14,0" Margin="0,4"
                                  TextAlignment="Center" Style="{StaticResource RoundedTextBoxStyle}" KeyDown="VerbBox_KeyDown"/>
 
                         <TextBlock x:Name="VerbLabel3" Grid.Row="2" Text="Past Participle" FontSize="20" FontWeight="SemiBold" Foreground="#455A64" VerticalAlignment="Center"/>
-                        <TextBox x:Name="VerbBox3" Grid.Row="2" Grid.Column="1" FontSize="24" Height="52" Padding="14,2,14,6" Margin="0,4"
+                        <TextBox x:Name="VerbBox3" Grid.Row="2" Grid.Column="1" FontSize="24" Height="52" Padding="14,0" Margin="0,4"
                                  TextAlignment="Center" Style="{StaticResource RoundedTextBoxStyle}" KeyDown="VerbBox_KeyDown"/>
                     </Grid>
 

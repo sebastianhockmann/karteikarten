@@ -68,7 +68,8 @@
         <Setter Property="Padding" Value="16,14"/>
     </Style>
 
-    <!-- Abgerundetes Eingabefeld -->
+    <!-- Abgerundetes Eingabefeld. Padding wendet die TextBox selbst an; als Margin
+         im Template käme es doppelt und schneidet Unterlängen (g, y) ab. -->
     <Style x:Key="RoundedTextBoxStyle" TargetType="TextBox">
         <Setter Property="BorderBrush" Value="{StaticResource InfoBlueBrush}"/>
         <Setter Property="BorderThickness" Value="2"/>
@@ -81,7 +82,6 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}">
                         <ScrollViewer x:Name="PART_ContentHost"
-                                      Margin="{TemplateBinding Padding}"
                                       VerticalAlignment="Center"/>
                     </Border>
                 </ControlTemplate>
