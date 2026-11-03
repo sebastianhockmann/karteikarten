@@ -5,7 +5,7 @@ was nicht offensichtlich ist.
 
 ## Status
 
-Zuletzt veröffentlicht: **v1.4.2** (2026-11-03).
+Zuletzt veröffentlicht: **v1.4.3** (2026-11-03).
 
 ### Eingabefelder und App-Icon (in v1.4.2, 2026-11-03)
 
@@ -14,8 +14,23 @@ Zuletzt veröffentlicht: **v1.4.2** (2026-11-03).
   Platz, Unterlängen (das y in „cuarenta y seis“) wurden abgeschnitten. Padding
   der Felder jetzt symmetrisch. Offscreen gerendert geprüft.
 - `app.ico` (Taskleiste/Fenster) aus `scripts/New-AppIcon.ps1`, als
-  `ApplicationIcon` in der UI-csproj. Pflege-Oberfläche hat noch das
-  Blazor-Standardicon.
+  `ApplicationIcon` in der UI-csproj.
+
+### Farbige Emojis (in v1.4.3, 2026-11-03)
+
+- WPF zeichnet Emojis nur einfarbig. Jetzt Paket `Emoji.Wpf` 0.3.4 (WTFPL,
+  von 2022, läuft unter .NET 10): `emoji:TextBlock` statt `TextBlock` überall,
+  wo Emojis stehen (Hauptfenster inkl. Buttons und Motiv-Auswahl, Pokal-
+  und Verlaufsfenster). Fenstertitel und MessageBoxen zeichnet Windows selbst.
+- Achtung: `Emoji.Wpf.TextBlock.Text` ist mit `new` verdeckt. Über eine
+  Variable vom Typ `TextBlock` gesetzt, bleibt der Text einfarbig.
+- Maskottchen und Deko werden nicht mehr in der Kopfzeilenfarbe eingefärbt.
+  🪐 geht jetzt auch.
+- Offscreen mit 1920×1040 gerendert (Weltraum, Dinos, Halloween, Pokal): alles
+  farbig, Höhen wie vorher. Dabei gesehen: Im Entwicklermodus wird der
+  Belohnungstext unten abgeschnitten (Inhalt 615 px, Platz 587 px), weil die
+  Kopfzeile mit „Lernen als“/„Motiv“ höher ist. Das war schon vorher so.
+- Pflege-Oberfläche: `icon-192.png` jetzt aus demselben Skript.
 
 ### Zahlen 1–100 für leand (Inhalt, 2026-11-03)
 
@@ -42,8 +57,8 @@ Zuletzt veröffentlicht: **v1.4.2** (2026-11-03).
 `Motifs` (Content): 16 Wochenmotive reihum ab Montag 05.01.2026, Vorrang für
 Feiertagsmotive (Ostern per Osterformel). `MainWindow.ApplyMotif` setzt
 Fensterhintergrund, Kopfzeile, Maskottchen (vorher fest 🦉) und vier
-Deko-Emojis in den Kartenecken. Da WPF Emojis einfarbig zeichnet, werden
-Maskottchen und Deko in der Kopfzeilenfarbe eingefärbt. Alle Emojis einmal
+Deko-Emojis in den Kartenecken. Da WPF Emojis einfarbig zeichnet, wurden
+Maskottchen und Deko in der Kopfzeilenfarbe eingefärbt (seit 1.4.3 farbig, siehe oben). Alle Emojis einmal
 mit WPF gerendert: nur 🪐 fehlte (ersetzt durch 🌍). Entwicklermodus hat eine
 Motiv-Vorschau. Kommt erst mit einem Release bei den Kindern an.
 

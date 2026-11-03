@@ -1,6 +1,7 @@
 ﻿<Window x:Class="EnglishSteamTrainer.UI.TrophyWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
         Title="🏆 Geschafft!"
         Height="650"
         Width="700"
@@ -18,7 +19,7 @@
                         VerticalAlignment="Center">
 
                 <!-- Pokal -->
-                <TextBlock Text="🏆"
+                <emoji:TextBlock Text="🏆"
                            FontSize="110"
                            HorizontalAlignment="Center">
 
@@ -28,7 +29,7 @@
                                         ScaleY="1"/>
                     </TextBlock.RenderTransform>
 
-                </TextBlock>
+                </emoji:TextBlock>
 
                 <!-- Überschrift -->
                 <TextBlock Text="Pokal gewonnen!"
@@ -51,7 +52,7 @@
                               ItemsPanel="{StaticResource HorizontalItemsPanel}"
                               ItemTemplate="{StaticResource BlockedAppTemplate}"/>
 
-                <TextBlock x:Name="UnlockedText"
+                <emoji:TextBlock x:Name="UnlockedText"
                            FontSize="24"
                            FontWeight="Bold"
                            Foreground="#2E7D32"
@@ -71,7 +72,7 @@
                     <StackPanel Orientation="Horizontal"
                                 HorizontalAlignment="Center">
 
-                        <TextBlock Text="🎮"
+                        <emoji:TextBlock Text="🎮"
                                    FontSize="26"
                                    Margin="0,0,12,0"
                                    VerticalAlignment="Center"/>

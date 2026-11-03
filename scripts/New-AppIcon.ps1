@@ -1,10 +1,12 @@
 # Zeichnet das Programm-Icon (Karteikarten auf grünem "chunky" Grund, Farben wie
-# in Styles/AppStyles.xaml) und schreibt src/EnglishSteamTrainer.UI/app.ico.
+# in Styles/AppStyles.xaml) und schreibt src/EnglishSteamTrainer.UI/app.ico sowie
+# das Icon der Pflege-Oberfläche (icon-192.png).
 # Kleine Größen bekommen eine vereinfachte Zeichnung, damit sie lesbar bleiben.
 # Braucht WPF, also Windows PowerShell im STA-Modus:
 #   powershell.exe -NoProfile -STA -File scripts\New-AppIcon.ps1
 param(
     [string]$OutFile = (Join-Path $PSScriptRoot "..\src\EnglishSteamTrainer.UI\app.ico"),
+    [string]$WebIconFile = (Join-Path $PSScriptRoot "..\src\EnglishSteamTrainer.Admin\wwwroot\icon-192.png"),
     [string]$PreviewDir
 )
 
@@ -108,3 +110,6 @@ foreach ($image in $images) { $writer.Write($image) }
 $writer.Flush()
 [IO.File]::WriteAllBytes([IO.Path]::GetFullPath($OutFile), $out.ToArray())
 "Icon geschrieben: $([IO.Path]::GetFullPath($OutFile))"
+
+[IO.File]::WriteAllBytes([IO.Path]::GetFullPath($WebIconFile), (Render-Icon 192))
+"Icon geschrieben: $([IO.Path]::GetFullPath($WebIconFile))"

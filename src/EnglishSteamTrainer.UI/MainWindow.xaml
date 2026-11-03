@@ -1,6 +1,7 @@
 <Window x:Class="EnglishSteamTrainer.UI.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
         Title="English Steam Trainer"
         Height="850"
         Width="1100"
@@ -23,21 +24,22 @@
                 <StackPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
                     <TextBlock x:Name="LevelText" Foreground="#FFE082" FontSize="18" FontWeight="Bold" TextAlignment="Right"/>
                     <TextBlock x:Name="XpText" Foreground="White" FontSize="14" TextAlignment="Right"/>
-                    <TextBlock x:Name="CurrentStreakText" Foreground="{StaticResource GoldBrush}" FontSize="14" FontWeight="Bold" TextAlignment="Right"/>
+                    <emoji:TextBlock x:Name="CurrentStreakText" Foreground="{StaticResource GoldBrush}" FontSize="14" FontWeight="Bold" TextAlignment="Right"/>
                     <TextBlock x:Name="BestStreakText" Foreground="#B0BEC5" FontSize="12" TextAlignment="Right"/>
-                    <Button Content="📊 Verlauf &amp; Punkte"
-                            Style="{StaticResource SecondaryButtonStyle}"
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
                             FontSize="13"
                             Padding="12,4"
                             Margin="0,8,0,0"
                             HorizontalAlignment="Right"
-                            Click="History_Click"/>
+                            Click="History_Click">
+                        <emoji:TextBlock Text="📊 Verlauf &amp; Punkte"/>
+                    </Button>
                     <StackPanel x:Name="LearnerPanel"
                                 Orientation="Horizontal"
                                 HorizontalAlignment="Right"
                                 Margin="0,8,0,0"
                                 Visibility="Collapsed">
-                        <TextBlock Text="🛠 Lernen als:" Foreground="#FFE082" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <emoji:TextBlock Text="🛠 Lernen als:" Foreground="#FFE082" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <ComboBox x:Name="LearnerBox"
                                   MinWidth="170"
                                   FontSize="13"
@@ -49,19 +51,24 @@
                                 HorizontalAlignment="Right"
                                 Margin="0,6,0,0"
                                 Visibility="Collapsed">
-                        <TextBlock Text="🎨 Motiv:" Foreground="#FFE082" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <emoji:TextBlock Text="🎨 Motiv:" Foreground="#FFE082" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <ComboBox x:Name="MotifBox"
                                   MinWidth="170"
                                   FontSize="13"
-                                  DisplayMemberPath="Label"
-                                  SelectionChanged="MotifBox_SelectionChanged"/>
+                                  SelectionChanged="MotifBox_SelectionChanged">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <emoji:TextBlock Text="{Binding Label}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
                     </StackPanel>
                 </StackPanel>
 
                 <StackPanel>
-                    <TextBlock x:Name="TitleText" Text="🎮 English Steam Trainer" Foreground="White" FontSize="30" FontWeight="Bold"/>
-                    <TextBlock x:Name="MotifText" Foreground="#FFE082" FontSize="15" FontWeight="SemiBold" Margin="0,2,0,4"/>
-                    <TextBlock x:Name="SubtitleText"
+                    <emoji:TextBlock x:Name="TitleText" Text="🎮 English Steam Trainer" Foreground="White" FontSize="30" FontWeight="Bold"/>
+                    <emoji:TextBlock x:Name="MotifText" Foreground="#FFE082" FontSize="15" FontWeight="SemiBold" Margin="0,2,0,4"/>
+                    <emoji:TextBlock x:Name="SubtitleText"
                                Foreground="#DDEEEE" FontSize="15"/>
                     <ItemsControl x:Name="HeaderAppsList"
                                   Tag="28"
@@ -82,7 +89,7 @@
                 Margin="0,10,0,0"
                 Visibility="Collapsed"
                 Panel.ZIndex="10">
-            <TextBlock x:Name="LevelUpBannerText"
+            <emoji:TextBlock x:Name="LevelUpBannerText"
                        FontSize="20"
                        FontWeight="Bold"
                        Foreground="#3E2723"/>
@@ -91,14 +98,14 @@
         <Border Grid.Row="1" Margin="0,22,0,22" Background="White" CornerRadius="22" Padding="28">
             <Grid>
             <!-- Deko des Motivs in den Ecken, nur Hintergrund. -->
-            <TextBlock x:Name="DecorationTopLeft" Style="{StaticResource MotifDecorationStyle}" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-            <TextBlock x:Name="DecorationTopRight" Style="{StaticResource MotifDecorationStyle}" HorizontalAlignment="Right" VerticalAlignment="Top"/>
-            <TextBlock x:Name="DecorationBottomLeft" Style="{StaticResource MotifDecorationStyle}" HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
-            <TextBlock x:Name="DecorationBottomRight" Style="{StaticResource MotifDecorationStyle}" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+            <emoji:TextBlock x:Name="DecorationTopLeft" Style="{StaticResource MotifDecorationStyle}" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+            <emoji:TextBlock x:Name="DecorationTopRight" Style="{StaticResource MotifDecorationStyle}" HorizontalAlignment="Right" VerticalAlignment="Top"/>
+            <emoji:TextBlock x:Name="DecorationBottomLeft" Style="{StaticResource MotifDecorationStyle}" HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
+            <emoji:TextBlock x:Name="DecorationBottomRight" Style="{StaticResource MotifDecorationStyle}" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
 
             <StackPanel MaxWidth="680" HorizontalAlignment="Center" VerticalAlignment="Center">
 
-                <TextBlock x:Name="MascotText"
+                <emoji:TextBlock x:Name="MascotText"
                            Text="🦉"
                            FontSize="64"
                            HorizontalAlignment="Center"
@@ -109,10 +116,10 @@
                             <TranslateTransform x:Name="MascotShift" X="0"/>
                         </TransformGroup>
                     </TextBlock.RenderTransform>
-                </TextBlock>
+                </emoji:TextBlock>
 
                 <StackPanel x:Name="VocabPanel">
-                    <TextBlock x:Name="VocabHeaderText" Text="Was heißt dieses Wort?" FontSize="18" Foreground="#546E7A" HorizontalAlignment="Center"/>
+                    <emoji:TextBlock x:Name="VocabHeaderText" Text="Was heißt dieses Wort?" FontSize="18" Foreground="#546E7A" HorizontalAlignment="Center"/>
                     <TextBlock x:Name="WordText" Text="apple" FontSize="54" FontWeight="Bold" Margin="0,14,0,12" HorizontalAlignment="Center"/>
 
                     <TextBox x:Name="AnswerBox" FontSize="40" Height="96" Padding="20,0"
@@ -127,7 +134,7 @@
                         <Button Content="Nächste Karte" Style="{StaticResource SecondaryButtonStyle}" Margin="12,0,0,0" Click="Next_Click"/>
                     </WrapPanel>
 
-                    <TextBlock x:Name="HintText"
+                    <emoji:TextBlock x:Name="HintText"
                                FontSize="16"
                                Foreground="{StaticResource InfoBlueDarkBrush}"
                                FontWeight="SemiBold"
@@ -137,7 +144,7 @@
                 </StackPanel>
 
                 <StackPanel x:Name="TensePanel" Visibility="Collapsed">
-                    <TextBlock x:Name="GrammarHeaderText" Text="Welche Form ist richtig?" FontSize="18" Foreground="#546E7A" HorizontalAlignment="Center"/>
+                    <emoji:TextBlock x:Name="GrammarHeaderText" Text="Welche Form ist richtig?" FontSize="18" Foreground="#546E7A" HorizontalAlignment="Center"/>
                     <TextBlock x:Name="TenseQuestionText" Text="she / play" FontSize="40" FontWeight="Bold" Margin="0,14,0,18" HorizontalAlignment="Center"/>
 
                     <UniformGrid Columns="2" Rows="2" HorizontalAlignment="Center">
@@ -149,7 +156,7 @@
                 </StackPanel>
 
                 <StackPanel x:Name="VerbPanel" Visibility="Collapsed">
-                    <TextBlock x:Name="VerbHeaderText" Text="Wie lauten die drei Formen?" FontSize="18" Foreground="#546E7A" HorizontalAlignment="Center"/>
+                    <emoji:TextBlock x:Name="VerbHeaderText" Text="Wie lauten die drei Formen?" FontSize="18" Foreground="#546E7A" HorizontalAlignment="Center"/>
                     <TextBlock x:Name="VerbGermanText" Text="bringen" FontSize="34" FontWeight="Bold" Margin="0,6,0,8" HorizontalAlignment="Center"/>
 
                     <Grid HorizontalAlignment="Center" Width="560">
@@ -188,7 +195,7 @@
                         Background="#EEEEEE"
                         CornerRadius="14"
                         MinHeight="45">
-                    <TextBlock x:Name="FeedbackText"
+                    <emoji:TextBlock x:Name="FeedbackText"
                                Text="Hier erscheint gleich dein Ergebnis."
                                FontSize="16"
                                FontWeight="Bold"
@@ -204,7 +211,7 @@
                                  Maximum="15"
                                  Height="34"/>
 
-                    <TextBlock x:Name="ProgressText"
+                    <emoji:TextBlock x:Name="ProgressText"
                                FontSize="16"
                                FontWeight="Bold"
                                Foreground="#263238"
@@ -220,7 +227,7 @@
                                       Margin="0,0,0,8"
                                       ItemsPanel="{StaticResource HorizontalItemsPanel}"
                                       ItemTemplate="{StaticResource BlockedAppTemplate}"/>
-                        <TextBlock x:Name="RewardText"
+                        <emoji:TextBlock x:Name="RewardText"
                                    FontSize="16"
                                    TextWrapping="Wrap"
                                    TextAlignment="Center"
@@ -232,8 +239,10 @@
         </Border>
 
         <DockPanel Grid.Row="2">
-            <Button x:Name="SteamButton" DockPanel.Dock="Right" Content="Belohnung starten 🚀"
-                    Style="{StaticResource PrimaryButtonStyle}" IsEnabled="False" Click="Steam_Click"/>
+            <Button x:Name="SteamButton" DockPanel.Dock="Right"
+                    Style="{StaticResource PrimaryButtonStyle}" IsEnabled="False" Click="Steam_Click">
+                <emoji:TextBlock Text="Belohnung starten 🚀"/>
+            </Button>
             <StackPanel VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal">
                     <ItemsControl x:Name="StatusAppsList"
@@ -241,7 +250,7 @@
                                   Margin="0,0,2,0"
                                   ItemsPanel="{StaticResource HorizontalItemsPanel}"
                                   ItemTemplate="{StaticResource BlockedAppTemplate}"/>
-                    <TextBlock x:Name="StatusText" VerticalAlignment="Center" FontSize="14" Foreground="#455A64"/>
+                    <emoji:TextBlock x:Name="StatusText" VerticalAlignment="Center" FontSize="14" Foreground="#455A64"/>
                 </StackPanel>
                 <TextBlock x:Name="VersionText" FontSize="11" Foreground="#90A4AE" Margin="0,4,0,0"/>
             </StackPanel>

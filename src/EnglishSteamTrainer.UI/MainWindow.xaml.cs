@@ -176,22 +176,16 @@ public partial class MainWindow : Window
     // Motiv der Woche bzw. des Feiertags (siehe Motifs): Maskottchen, Deko, Farben.
     private void ApplyMotif(Motif motif)
     {
-        // WPF zeigt Emojis nur einfarbig - deshalb Maskottchen und Deko in der Motivfarbe.
-        var color = MotifBrush(motif.HeaderColor);
-
         Background = MotifBrush(motif.BackgroundColor);
-        HeaderBox.Background = color;
+        HeaderBox.Background = MotifBrush(motif.HeaderColor);
         MascotText.Text = motif.Mascot;
-        MascotText.Foreground = color;
         MotifText.Text = $"{motif.Mascot} Motiv der Woche: {motif.Name} – {motif.Greeting}";
 
-        TextBlock[] decorations = [DecorationTopLeft, DecorationTopRight, DecorationBottomLeft, DecorationBottomRight];
+        // Emoji.Wpf.TextBlock verdeckt Text nur (new) - als WPF-TextBlock gesetzt bliebe es einfarbig.
+        Emoji.Wpf.TextBlock[] decorations = [DecorationTopLeft, DecorationTopRight, DecorationBottomLeft, DecorationBottomRight];
 
         for (var i = 0; i < decorations.Length; i++)
-        {
             decorations[i].Text = motif.Decorations.Length == 0 ? "" : motif.Decorations[i % motif.Decorations.Length];
-            decorations[i].Foreground = color;
-        }
     }
 
     private static Brush MotifBrush(string color) =>

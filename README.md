@@ -287,9 +287,9 @@ Halloween (25.10.–1.11.), Advent (1.–17.12.) und Weihnachten (18.–27.12.).
 Alle Kinder sehen in derselben Woche dasselbe Motiv.
 
 Die Motive stehen in `src/EnglishSteamTrainer.Content/WeeklyMotif.cs`, neue
-kommen also mit einem Release. WPF zeigt Emojis nur einfarbig und kennt
-nicht alle neueren – neue Motive deshalb im Entwicklermodus über „Motiv“
-ansehen.
+kommen also mit einem Release. Emojis erscheinen farbig (Emoji.Wpf mit der
+Emoji-Schrift von Windows) – neue Motive trotzdem im Entwicklermodus über
+„Motiv“ ansehen.
 
 ## Entwicklermodus (Entwickler / Eltern)
 

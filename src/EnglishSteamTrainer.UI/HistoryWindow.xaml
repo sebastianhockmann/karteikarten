@@ -1,6 +1,7 @@
 <Window x:Class="EnglishSteamTrainer.UI.HistoryWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
         Title="📊 Verlauf &amp; Punkte"
         Height="760"
         Width="980"
@@ -67,7 +68,7 @@
                 Padding="12"
                 Margin="0,0,0,14"
                 Visibility="Collapsed">
-            <TextBlock x:Name="IntegrityText"
+            <emoji:TextBlock x:Name="IntegrityText"
                        FontSize="14"
                        FontWeight="SemiBold"
                        Foreground="{StaticResource DangerRedDarkBrush}"
@@ -102,7 +103,13 @@
                         <DataGridTextColumn Header="Falsch" Binding="{Binding Wrong}" Width="90"/>
                         <DataGridTextColumn Header="Trefferquote" Binding="{Binding Rate}" Width="110"/>
                         <DataGridTextColumn Header="XP" Binding="{Binding Xp}" Width="80"/>
-                        <DataGridTextColumn Header="Tagesziel" Binding="{Binding Goal}" Width="*"/>
+                        <DataGridTemplateColumn Header="Tagesziel" SortMemberPath="Goal" Width="*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <emoji:TextBlock Text="{Binding Goal}" VerticalAlignment="Center"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </TabItem>
@@ -114,7 +121,13 @@
                         <DataGridTextColumn Header="Sprache" Binding="{Binding Language}" Width="90"/>
                         <DataGridTextColumn Header="Aufgabe" Binding="{Binding Prompt}" Width="2*"/>
                         <DataGridTextColumn Header="Antwort" Binding="{Binding Given}" Width="1.5*"/>
-                        <DataGridTextColumn Header="Ergebnis" Binding="{Binding Result}" Width="110"/>
+                        <DataGridTemplateColumn Header="Ergebnis" SortMemberPath="Result" Width="110">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <emoji:TextBlock Text="{Binding Result}" VerticalAlignment="Center"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                         <DataGridTextColumn Header="XP" Binding="{Binding Xp}" Width="60"/>
                         <DataGridTextColumn Header="Summe" Binding="{Binding RunningXp}" Width="80"/>
                     </DataGrid.Columns>

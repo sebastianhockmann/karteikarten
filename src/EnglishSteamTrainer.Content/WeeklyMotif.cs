@@ -16,8 +16,8 @@ public sealed record Motif(
     string Greeting);
 
 /// <remarks>
-/// WPF kennt nicht jedes neuere Emoji (z. B. 🪐 erscheint als leeres Kästchen) -
-/// neue Emojis einmal in der App ansehen, z. B. über die Motiv-Vorschau im Entwicklermodus.
+/// Die App zeichnet Emojis farbig mit Emoji.Wpf (Emoji-Schrift von Windows). Neue Emojis
+/// trotzdem einmal ansehen, z. B. über die Motiv-Vorschau im Entwicklermodus.
 /// </remarks>
 public static class Motifs
 {
