@@ -7,6 +7,15 @@ was nicht offensichtlich ist.
 
 Zuletzt veröffentlicht: **v1.4.1** (2026-11-02).
 
+### Zahlen 1–100 für leand (Inhalt, 2026-11-03)
+
+- `es/vocabulary.csv`: Thema „Zahlen“ jetzt 1–100, Ziffer als deutsche
+  Alternative („21“ zählt wie „einundzwanzig“).
+- `plan.json`: eigener Eintrag für leand (02.–08.11.) mit „Party-Essen“ *und*
+  „Zahlen“. Party-Essen muss dort mit drinstehen, weil bei gleichzeitig
+  aktiven Einträgen nur der spezifischste gilt – sonst fiele das Thema weg.
+- `config.json`: leand braucht 35 statt 30 richtige Antworten.
+
 ### Verben im Lernplan (für 1.4.1, 2026-11-02)
 
 - Alle unregelmäßigen Verben haben das Thema „Unregelmäßige Verben“; tiago hat

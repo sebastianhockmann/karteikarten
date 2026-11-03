@@ -26,16 +26,106 @@ queso;Käse;Wird aus Milch gemacht;;;Essen|Party-Essen
 huevo;Ei;Kommt vom Huhn;;;Essen
 manzana;Apfel;Obst, rot oder grün;;;Essen
 plátano;Banane;Gelbes, krummes Obst;;banana;Essen
-uno;eins;Die Zahl 1;;;Zahlen
-dos;zwei;Die Zahl 2;;;Zahlen
-tres;drei;Die Zahl 3;;;Zahlen
-cuatro;vier;Die Zahl 4;;;Zahlen
-cinco;fünf;Die Zahl 5;;;Zahlen
-seis;sechs;Die Zahl 6;;;Zahlen
-siete;sieben;Die Zahl 7;;;Zahlen
-ocho;acht;Die Zahl 8;;;Zahlen
-nueve;neun;Die Zahl 9;;;Zahlen
-diez;zehn;Die Zahl 10;;;Zahlen
+uno;eins;Die Zahl 1;1;;Zahlen
+dos;zwei;Die Zahl 2;2;;Zahlen
+tres;drei;Die Zahl 3;3;;Zahlen
+cuatro;vier;Die Zahl 4;4;;Zahlen
+cinco;fünf;Die Zahl 5;5;;Zahlen
+seis;sechs;Die Zahl 6;6;;Zahlen
+siete;sieben;Die Zahl 7;7;;Zahlen
+ocho;acht;Die Zahl 8;8;;Zahlen
+nueve;neun;Die Zahl 9;9;;Zahlen
+diez;zehn;Die Zahl 10;10;;Zahlen
+once;elf;Die Zahl 11;11;;Zahlen
+doce;zwölf;Die Zahl 12;12;;Zahlen
+trece;dreizehn;Die Zahl 13;13;;Zahlen
+catorce;vierzehn;Die Zahl 14;14;;Zahlen
+quince;fünfzehn;Die Zahl 15;15;;Zahlen
+dieciséis;sechzehn;Die Zahl 16;16;;Zahlen
+diecisiete;siebzehn;Die Zahl 17;17;;Zahlen
+dieciocho;achtzehn;Die Zahl 18;18;;Zahlen
+diecinueve;neunzehn;Die Zahl 19;19;;Zahlen
+veinte;zwanzig;Die Zahl 20;20;;Zahlen
+veintiuno;einundzwanzig;Die Zahl 21;21;;Zahlen
+veintidós;zweiundzwanzig;Die Zahl 22;22;;Zahlen
+veintitrés;dreiundzwanzig;Die Zahl 23;23;;Zahlen
+veinticuatro;vierundzwanzig;Die Zahl 24;24;;Zahlen
+veinticinco;fünfundzwanzig;Die Zahl 25;25;;Zahlen
+veintiséis;sechsundzwanzig;Die Zahl 26;26;;Zahlen
+veintisiete;siebenundzwanzig;Die Zahl 27;27;;Zahlen
+veintiocho;achtundzwanzig;Die Zahl 28;28;;Zahlen
+veintinueve;neunundzwanzig;Die Zahl 29;29;;Zahlen
+treinta;dreißig;Die Zahl 30;30;;Zahlen
+treinta y uno;einunddreißig;Die Zahl 31;31;;Zahlen
+treinta y dos;zweiunddreißig;Die Zahl 32;32;;Zahlen
+treinta y tres;dreiunddreißig;Die Zahl 33;33;;Zahlen
+treinta y cuatro;vierunddreißig;Die Zahl 34;34;;Zahlen
+treinta y cinco;fünfunddreißig;Die Zahl 35;35;;Zahlen
+treinta y seis;sechsunddreißig;Die Zahl 36;36;;Zahlen
+treinta y siete;siebenunddreißig;Die Zahl 37;37;;Zahlen
+treinta y ocho;achtunddreißig;Die Zahl 38;38;;Zahlen
+treinta y nueve;neununddreißig;Die Zahl 39;39;;Zahlen
+cuarenta;vierzig;Die Zahl 40;40;;Zahlen
+cuarenta y uno;einundvierzig;Die Zahl 41;41;;Zahlen
+cuarenta y dos;zweiundvierzig;Die Zahl 42;42;;Zahlen
+cuarenta y tres;dreiundvierzig;Die Zahl 43;43;;Zahlen
+cuarenta y cuatro;vierundvierzig;Die Zahl 44;44;;Zahlen
+cuarenta y cinco;fünfundvierzig;Die Zahl 45;45;;Zahlen
+cuarenta y seis;sechsundvierzig;Die Zahl 46;46;;Zahlen
+cuarenta y siete;siebenundvierzig;Die Zahl 47;47;;Zahlen
+cuarenta y ocho;achtundvierzig;Die Zahl 48;48;;Zahlen
+cuarenta y nueve;neunundvierzig;Die Zahl 49;49;;Zahlen
+cincuenta;fünfzig;Die Zahl 50;50;;Zahlen
+cincuenta y uno;einundfünfzig;Die Zahl 51;51;;Zahlen
+cincuenta y dos;zweiundfünfzig;Die Zahl 52;52;;Zahlen
+cincuenta y tres;dreiundfünfzig;Die Zahl 53;53;;Zahlen
+cincuenta y cuatro;vierundfünfzig;Die Zahl 54;54;;Zahlen
+cincuenta y cinco;fünfundfünfzig;Die Zahl 55;55;;Zahlen
+cincuenta y seis;sechsundfünfzig;Die Zahl 56;56;;Zahlen
+cincuenta y siete;siebenundfünfzig;Die Zahl 57;57;;Zahlen
+cincuenta y ocho;achtundfünfzig;Die Zahl 58;58;;Zahlen
+cincuenta y nueve;neunundfünfzig;Die Zahl 59;59;;Zahlen
+sesenta;sechzig;Die Zahl 60;60;;Zahlen
+sesenta y uno;einundsechzig;Die Zahl 61;61;;Zahlen
+sesenta y dos;zweiundsechzig;Die Zahl 62;62;;Zahlen
+sesenta y tres;dreiundsechzig;Die Zahl 63;63;;Zahlen
+sesenta y cuatro;vierundsechzig;Die Zahl 64;64;;Zahlen
+sesenta y cinco;fünfundsechzig;Die Zahl 65;65;;Zahlen
+sesenta y seis;sechsundsechzig;Die Zahl 66;66;;Zahlen
+sesenta y siete;siebenundsechzig;Die Zahl 67;67;;Zahlen
+sesenta y ocho;achtundsechzig;Die Zahl 68;68;;Zahlen
+sesenta y nueve;neunundsechzig;Die Zahl 69;69;;Zahlen
+setenta;siebzig;Die Zahl 70;70;;Zahlen
+setenta y uno;einundsiebzig;Die Zahl 71;71;;Zahlen
+setenta y dos;zweiundsiebzig;Die Zahl 72;72;;Zahlen
+setenta y tres;dreiundsiebzig;Die Zahl 73;73;;Zahlen
+setenta y cuatro;vierundsiebzig;Die Zahl 74;74;;Zahlen
+setenta y cinco;fünfundsiebzig;Die Zahl 75;75;;Zahlen
+setenta y seis;sechsundsiebzig;Die Zahl 76;76;;Zahlen
+setenta y siete;siebenundsiebzig;Die Zahl 77;77;;Zahlen
+setenta y ocho;achtundsiebzig;Die Zahl 78;78;;Zahlen
+setenta y nueve;neunundsiebzig;Die Zahl 79;79;;Zahlen
+ochenta;achtzig;Die Zahl 80;80;;Zahlen
+ochenta y uno;einundachtzig;Die Zahl 81;81;;Zahlen
+ochenta y dos;zweiundachtzig;Die Zahl 82;82;;Zahlen
+ochenta y tres;dreiundachtzig;Die Zahl 83;83;;Zahlen
+ochenta y cuatro;vierundachtzig;Die Zahl 84;84;;Zahlen
+ochenta y cinco;fünfundachtzig;Die Zahl 85;85;;Zahlen
+ochenta y seis;sechsundachtzig;Die Zahl 86;86;;Zahlen
+ochenta y siete;siebenundachtzig;Die Zahl 87;87;;Zahlen
+ochenta y ocho;achtundachtzig;Die Zahl 88;88;;Zahlen
+ochenta y nueve;neunundachtzig;Die Zahl 89;89;;Zahlen
+noventa;neunzig;Die Zahl 90;90;;Zahlen
+noventa y uno;einundneunzig;Die Zahl 91;91;;Zahlen
+noventa y dos;zweiundneunzig;Die Zahl 92;92;;Zahlen
+noventa y tres;dreiundneunzig;Die Zahl 93;93;;Zahlen
+noventa y cuatro;vierundneunzig;Die Zahl 94;94;;Zahlen
+noventa y cinco;fünfundneunzig;Die Zahl 95;95;;Zahlen
+noventa y seis;sechsundneunzig;Die Zahl 96;96;;Zahlen
+noventa y siete;siebenundneunzig;Die Zahl 97;97;;Zahlen
+noventa y ocho;achtundneunzig;Die Zahl 98;98;;Zahlen
+noventa y nueve;neunundneunzig;Die Zahl 99;99;;Zahlen
+cien;hundert;Die Zahl 100;100|einhundert;;Zahlen
 rojo;rot;Farbe von Erdbeeren;;;Farben
 azul;blau;Farbe vom Himmel;;;Farben
 verde;grün;Farbe von Gras;;;Farben
