@@ -1,11 +1,21 @@
 # Handoff: English Steam Trainer
 
-Stand: 2026-11-02. Die Bedienung und Pflege beschreibt `README.md`. Hier steht nur,
+Stand: 2026-11-03. Die Bedienung und Pflege beschreibt `README.md`. Hier steht nur,
 was nicht offensichtlich ist.
 
 ## Status
 
-Zuletzt veröffentlicht: **v1.4.1** (2026-11-02).
+Zuletzt veröffentlicht: **v1.4.2** (2026-11-03).
+
+### Eingabefelder und App-Icon (in v1.4.2, 2026-11-03)
+
+- `RoundedTextBoxStyle` hat das Padding zusätzlich als Margin im Template
+  gesetzt, die TextBox wendet es aber selbst schon an. Doppelt gerechnet fehlte
+  Platz, Unterlängen (das y in „cuarenta y seis“) wurden abgeschnitten. Padding
+  der Felder jetzt symmetrisch. Offscreen gerendert geprüft.
+- `app.ico` (Taskleiste/Fenster) aus `scripts/New-AppIcon.ps1`, als
+  `ApplicationIcon` in der UI-csproj. Pflege-Oberfläche hat noch das
+  Blazor-Standardicon.
 
 ### Zahlen 1–100 für leand (Inhalt, 2026-11-03)
 
